@@ -49,7 +49,7 @@ Wire it into Claude Desktop / Cursor:
 The image is published to GitHub Container Registry as a public package:
 
 ```bash
-docker pull ghcr.io/qelos/better-mcp:latest
+docker pull ghcr.io/qelos-io/better-mcp:main
 ```
 
 Run it, mounting your `mcp.json` so the proxy can find it at `/app/mcp.json`
@@ -60,7 +60,7 @@ mount a writable directory and point `middleware.offload.dir` at it.
 docker run --rm -i \
   -v "$PWD/mcp.json:/app/mcp.json:ro" \
   -v "$PWD/exports:/exports" \
-  ghcr.io/qelos/better-mcp:latest
+  ghcr.io/qelos-io/better-mcp:main
 ```
 
 Wire it into a host:
@@ -74,7 +74,7 @@ Wire it into a host:
         "run", "--rm", "-i",
         "-v", "/abs/path/to/mcp.json:/app/mcp.json:ro",
         "-v", "/abs/path/to/exports:/exports",
-        "ghcr.io/qelos/better-mcp:latest"
+        "ghcr.io/qelos-io/better-mcp:main"
       ]
     }
   }
@@ -93,7 +93,7 @@ toolchains, build a derived image.
 ### Option C — Build from source
 
 ```bash
-git clone https://github.com/qelos/better-mcp.git
+git clone https://github.com/qelos-io/better-mcp.git
 cd better-mcp
 npm install
 npm run build
