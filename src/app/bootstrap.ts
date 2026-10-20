@@ -1,47 +1,84 @@
+import { resolve } from "node:path";
 import { loadConfig } from "../config/index.js";
+import { saveServers } from "../config/writer.js";
 import { startListenServer } from "../controllers/listen.controller.js";
+import { ConfigCredentialStore } from "../lib/credential-store.js";
+import { credentialsKey } from "../lib/oauth.js";
 import { resolveSlimConfig } from "../lib/slim.js";
+import { loadCatalog } from "../manage/catalog.js";
+import { resolveManageOptions } from "../manage/options.js";
+import { ManageServer } from "../manage/server.js";
 import { MiddlewarePipeline } from "../middleware/pipeline.js";
+import { createBuiltinTools } from "../services/builtin.service.js";
+import { UpstreamManager } from "../services/manager.service.js";
 import { buildProxyServer, startProxy } from "../services/proxy.service.js";
-import { connectAll } from "../services/upstream.service.js";
 
 export async function bootstrap(opts: { entryDir: string }): Promise<void> {
-  const { config, baseDir, source } = await loadConfig({ entryDir: opts.entryDir });
+  const { config, baseDir, source, configPath, rawServers } = await loadConfig({
+    entryDir: opts.entryDir,
+  });
   process.stderr.write(`[better-mcp] using config: ${source}\n`);
 
-  const upstreams = await connectAll(config.mcpServers);
-  if (upstreams.length === 0) {
-    process.stderr.write("[better-mcp] no upstream servers connected; exiting.\n");
-    process.exit(1);
-  }
+  const useConfigAuth = configPath !== undefined && config.authStorage !== "home";
+  const manager = new UpstreamManager(rawServers, {
+    createStore: useConfigAuth
+      ? (name, url) => new ConfigCredentialStore(configPath, credentialsKey(name, url))
+      : undefined,
+    save: configPath ? (servers) => saveServers(configPath, servers) : undefined,
+  });
+  await manager.start();
+  const views = manager.list();
+  const connected = views.filter((v) => v.status === "connected").map((v) => v.name);
   process.stderr.write(
-    `[better-mcp] connected to ${upstreams.length} server(s): ` +
-      upstreams.map((s) => s.name).join(", ") +
+    `[better-mcp] connected to ${connected.length}/${views.length} server(s)` +
+      (connected.length ? `: ${connected.join(", ")}` : "") +
       "\n",
   );
+  const pending = manager.needingLogin();
+  if (pending.length) {
+    process.stderr.write(
+      `[better-mcp] login required for: ${pending.join(", ")} (use the authenticate or manage_mcps tool)\n`,
+    );
+  }
+
+  const manageCfg = config.manage ?? {};
+  const manageServer =
+    manageCfg.enabled === false
+      ? null
+      : new ManageServer({
+          manager,
+          persistent: configPath !== undefined,
+          ...resolveManageOptions(manageCfg),
+          catalog: () =>
+            loadCatalog({
+              url: manageCfg.catalogUrl,
+              bundledPath: resolve(opts.entryDir, "..", "docs", "marketplace", "servers.json"),
+            }),
+        });
+  const builtins = manageServer
+    ? createBuiltinTools({ manager, manageUrl: () => manageServer.ensureStarted() })
+    : [];
 
   const pipeline = await MiddlewarePipeline.build(config.middleware, baseDir);
   const slim = resolveSlimConfig(config.middleware?.slim);
-  const stdioServer = buildProxyServer({
-    upstreams,
+  const shared = {
+    upstreams: manager.upstreams,
     pipeline,
     namespace: config.namespace ?? true,
     slim,
-  });
+    builtins,
+    onUpstreamsChange: (fn: () => void) => manager.onChange(fn),
+  };
+  const stdioServer = buildProxyServer(shared);
 
   const listenServer = config.listen
-    ? await startListenServer({
-        listen: config.listen,
-        upstreams,
-        pipeline,
-        namespace: config.namespace ?? true,
-        slim,
-      })
+    ? await startListenServer({ listen: config.listen, ...shared })
     : null;
 
   const shutdown = async () => {
     if (listenServer) await listenServer.close();
-    await Promise.all(upstreams.map((u) => u.close()));
+    await manageServer?.close();
+    await manager.close();
     process.exit(0);
   };
   process.on("SIGINT", shutdown);

@@ -11,9 +11,19 @@ import {
 import type { MiddlewarePipeline } from "../middleware/pipeline.js";
 import type { UpstreamServer } from "./upstream.service.js";
 import type { ProxyRequest } from "../types/index.js";
+import { VERSION } from "../lib/version.js";
 import { slimTool, type ResolvedSlimConfig } from "../lib/slim.js";
 
 const NS_SEPARATOR = "__";
+
+/** A tool implemented by the proxy itself rather than forwarded to an upstream. */
+export interface BuiltinTool {
+  name: string;
+  /** Evaluated on each tools/list so it can reflect live state. */
+  description: () => string;
+  inputSchema: { type: "object"; [k: string]: unknown };
+  call(args: Record<string, unknown>): Promise<{ text: string; isError?: boolean }>;
+}
 
 /**
  * Build the array returned by `tools/list`. Pulled out of the request handler
@@ -51,7 +61,8 @@ export function buildListedTools(
  * For resources the public identifier is the URI; we don't rewrite URIs because they
  * are opaque to clients, but we do detect collisions across servers.
  */
-function buildRoutes(servers: UpstreamServer[], namespace: boolean) {
+export function buildRoutes(servers: UpstreamServer[], namespace: boolean, quiet = false) {
+  const warn = quiet ? () => {} : warnMsg;
   const tools = new Map<string, { server: UpstreamServer; originalName: string }>();
   const prompts = new Map<string, { server: UpstreamServer; originalName: string }>();
   const resources = new Map<string, UpstreamServer>();
@@ -93,30 +104,63 @@ export function buildProxyServer(opts: {
   pipeline: MiddlewarePipeline;
   namespace: boolean;
   slim: ResolvedSlimConfig | null;
+  builtins?: BuiltinTool[];
+  /** Subscribe to upstream set changes; returns an unsubscribe function. */
+  onUpstreamsChange?: (fn: () => void) => () => void;
 }): McpServer {
   const { upstreams, pipeline, namespace, slim } = opts;
-  const routes = buildRoutes(upstreams, namespace);
+  const builtins = new Map((opts.builtins ?? []).map((b) => [b.name, b]));
+  let routes = buildRoutes(upstreams, namespace);
 
   const mcp = new McpServer(
-    { name: "@qelos/better-mcp", version: "0.1.0" },
+    { name: "@qelos/better-mcp", version: VERSION },
     {
       capabilities: {
-        tools: {},
-        resources: {},
-        prompts: {},
+        tools: { listChanged: true },
+        resources: { listChanged: true },
+        prompts: { listChanged: true },
       },
     },
   );
   const server = mcp.server;
 
+  if (opts.onUpstreamsChange) {
+    const off = opts.onUpstreamsChange(() => {
+      routes = buildRoutes(upstreams, namespace, true);
+      for (const notify of [
+        () => server.sendToolListChanged(),
+        () => server.sendResourceListChanged(),
+        () => server.sendPromptListChanged(),
+      ]) {
+        // Not connected yet / already closed: nobody to tell.
+        notify().catch(() => {});
+      }
+    });
+    const prev = server.onclose;
+    server.onclose = () => {
+      off();
+      prev?.();
+    };
+  }
+
   // ---- tools ---------------------------------------------------------------
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return { tools: buildListedTools(upstreams, namespace, slim) };
+    const own = [...builtins.values()].map((b) => ({
+      name: b.name,
+      description: b.description(),
+      inputSchema: b.inputSchema,
+    }));
+    return { tools: [...own, ...buildListedTools(upstreams, namespace, slim)] };
   });
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const publicName = req.params.name;
+    const builtin = builtins.get(publicName);
+    if (builtin) {
+      const out = await builtin.call((req.params.arguments ?? {}) as Record<string, unknown>);
+      return { content: [{ type: "text" as const, text: out.text }], isError: out.isError === true };
+    }
     const route = routes.tools.get(publicName);
     if (!route) throw new Error(`Unknown tool: ${publicName}`);
 
@@ -215,6 +259,6 @@ export async function startProxy(mcp: McpServer): Promise<void> {
   await mcp.connect(transport);
 }
 
-function warn(msg: string): void {
+function warnMsg(msg: string): void {
   process.stderr.write(`[better-mcp] ${msg}\n`);
 }

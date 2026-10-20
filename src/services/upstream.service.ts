@@ -1,8 +1,22 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+import {
+  BetterMcpOAuthProvider,
+  CallbackHub,
+  DEFAULT_CALLBACK_PORT,
+  FileCredentialStore,
+  type CredentialStore,
+  credentialsFileName,
+  defaultAuthDir,
+  resolveOAuthConfig,
+  shouldUseOAuth,
+} from "../lib/oauth.js";
+import { VERSION } from "../lib/version.js";
 import type { McpServerConfig } from "../types/index.js";
+import { join } from "node:path";
 
 export interface UpstreamTool {
   server: string;
@@ -27,7 +41,7 @@ export interface UpstreamPrompt {
   arguments?: unknown;
 }
 
-const PROXY_CLIENT_INFO = { name: "@qelos/better-mcp", version: "0.1.0" };
+const PROXY_CLIENT_INFO = { name: "@qelos/better-mcp", version: VERSION };
 
 /**
  * One connected upstream MCP server, holding the SDK Client and the catalog
@@ -107,33 +121,30 @@ export class UpstreamServer {
   }
 }
 
-/**
- * Spawn and connect to every server in the config. Servers that fail to
- * start are logged to stderr but do not crash the proxy — the rest still
- * come up. Returns the list of successfully-connected servers.
- */
-export async function connectAll(
-  servers: Record<string, McpServerConfig>,
-): Promise<UpstreamServer[]> {
-  const entries = Object.entries(servers).filter(([, s]) => s.enabled !== false);
-
-  const results = await Promise.all(
-    entries.map(async ([name, cfg]) => {
-      try {
-        return await connectOne(name, cfg);
-      } catch (err) {
-        warn(name, "failed to start upstream server", err);
-        return null;
-      }
-    }),
-  );
-  return results.filter((r): r is UpstreamServer => r !== null);
+/** Thrown by a non-interactive connect when the server wants a browser login. */
+export class NeedsAuthError extends Error {
+  constructor(server: string) {
+    super(`${server} requires login`);
+    this.name = "NeedsAuthError";
+  }
 }
 
-async function connectOne(name: string, cfg: McpServerConfig): Promise<UpstreamServer> {
-  if (cfg.url) {
-    return connectRemote(name, cfg);
-  }
+export interface ConnectOptions {
+  /** Open a browser for OAuth login when required. Default: false. */
+  interactive?: boolean;
+  /** Receives the login URL when an interactive login starts. */
+  onLoginUrl?: (url: string) => void;
+  /** Choose where OAuth state is kept. Default: a file under `~/.better-mcp/auth`. */
+  createStore?: (name: string, url: string) => CredentialStore;
+}
+
+/** Connect to one configured server. Throws `NeedsAuthError` if login is required but not allowed. */
+export async function connectServer(
+  name: string,
+  cfg: McpServerConfig,
+  opts: ConnectOptions = {},
+): Promise<UpstreamServer> {
+  if (cfg.url) return connectRemote(name, cfg, opts.interactive === true, opts.onLoginUrl, opts.createStore);
   return connectStdio(name, cfg);
 }
 
@@ -158,13 +169,65 @@ async function connectStdio(name: string, cfg: McpServerConfig): Promise<Upstrea
   return server;
 }
 
-async function connectRemote(name: string, cfg: McpServerConfig): Promise<UpstreamServer> {
+const hubs = new Map<number, CallbackHub>();
+
+function hubFor(port: number): CallbackHub {
+  let hub = hubs.get(port);
+  if (!hub) hubs.set(port, (hub = new CallbackHub(port, process.env.BETTER_MCP_CALLBACK_HOST || undefined)));
+  return hub;
+}
+
+async function releaseHub(port: number): Promise<void> {
+  const hub = hubs.get(port);
+  if (hub && hub.pendingCount === 0) {
+    hubs.delete(port);
+    await hub.close();
+  }
+}
+
+async function connectRemote(
+  name: string,
+  cfg: McpServerConfig,
+  interactive: boolean,
+  onLoginUrl?: (url: string) => void,
+  createStore?: (name: string, url: string) => CredentialStore,
+): Promise<UpstreamServer> {
   const url = new URL(cfg.url!);
   const requestInit = buildRequestInit(cfg.headers);
-  return connectWithTransport(
-    name,
-    new StreamableHTTPClientTransport(url, { requestInit }),
-  );
+
+  if (!shouldUseOAuth(cfg)) {
+    return connectWithTransport(name, new StreamableHTTPClientTransport(url, { requestInit }));
+  }
+
+  const config = resolveOAuthConfig(cfg);
+  const port = config.callbackPort ?? DEFAULT_CALLBACK_PORT;
+  const provider = new BetterMcpOAuthProvider({
+    serverName: name,
+    config,
+    port,
+    interactive,
+    onAuthUrl: onLoginUrl,
+    hub: hubFor(port),
+    store: createStore
+      ? createStore(name, url.href)
+      : new FileCredentialStore(join(defaultAuthDir(), credentialsFileName(name, url.href))),
+  });
+  const makeTransport = () =>
+    new StreamableHTTPClientTransport(url, { requestInit, authProvider: provider });
+
+  const transport = makeTransport();
+  try {
+    return await connectWithTransport(name, transport);
+  } catch (err) {
+    if (!(err instanceof UnauthorizedError)) throw err;
+    if (!interactive) throw new NeedsAuthError(name);
+    try {
+      await transport.finishAuth(await provider.waitForCode());
+    } finally {
+      await releaseHub(port);
+    }
+    return connectWithTransport(name, makeTransport());
+  }
 }
 
 async function connectWithTransport(name: string, transport: Transport): Promise<UpstreamServer> {

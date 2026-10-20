@@ -8,7 +8,7 @@ import { isLoopbackHost } from "../config/index.js";
 import { makeBearerAuth } from "../http/auth.middleware.js";
 import type { ResolvedSlimConfig } from "../lib/slim.js";
 import type { MiddlewarePipeline } from "../middleware/pipeline.js";
-import { buildProxyServer } from "../services/proxy.service.js";
+import { buildProxyServer, type BuiltinTool } from "../services/proxy.service.js";
 import type { UpstreamServer } from "../services/upstream.service.js";
 import type { ListenConfig } from "../types/index.js";
 
@@ -22,6 +22,8 @@ interface ListenContext {
   pipeline: MiddlewarePipeline;
   namespace: boolean;
   slim: ResolvedSlimConfig | null;
+  builtins?: BuiltinTool[];
+  onUpstreamsChange?: (fn: () => void) => () => void;
   transports: Record<string, StreamableHTTPServerTransport>;
 }
 
@@ -35,6 +37,8 @@ export async function startListenServer(opts: {
   pipeline: MiddlewarePipeline;
   namespace: boolean;
   slim: ResolvedSlimConfig | null;
+  builtins?: BuiltinTool[];
+  onUpstreamsChange?: (fn: () => void) => () => void;
 }): Promise<ListenServer> {
   const host = opts.listen.host ?? "127.0.0.1";
   const path = opts.listen.path ?? "/mcp";
@@ -52,6 +56,8 @@ export async function startListenServer(opts: {
     pipeline: opts.pipeline,
     namespace: opts.namespace,
     slim: opts.slim,
+    builtins: opts.builtins,
+    onUpstreamsChange: opts.onUpstreamsChange,
     transports: {},
   };
 
@@ -122,6 +128,8 @@ async function handlePost(ctx: ListenContext, req: Request, res: Response): Prom
         pipeline: ctx.pipeline,
         namespace: ctx.namespace,
         slim: ctx.slim,
+        builtins: ctx.builtins,
+        onUpstreamsChange: ctx.onUpstreamsChange,
       });
       await server.connect(transport);
       await transport.handleRequest(req, res, req.body);

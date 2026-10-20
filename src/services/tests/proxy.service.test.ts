@@ -120,3 +120,86 @@ test("buildListedTools does not mutate upstream tool definitions", () => {
   buildListedTools([upstream("gh", tools)], true, resolveSlimConfig(true));
   assert.deepEqual(noisyInputSchema, original);
 });
+
+// ============================================================================
+// builtin tools + live upstream changes
+// ============================================================================
+
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { ToolListChangedNotificationSchema } from "@modelcontextprotocol/sdk/types.js";
+import { MiddlewarePipeline } from "../../middleware/pipeline.js";
+import { buildProxyServer, type BuiltinTool } from "../proxy.service.js";
+import type { UpstreamServer } from "../upstream.service.js";
+
+async function connectProxy(opts: { upstreams: UpstreamServer[]; builtins?: BuiltinTool[]; onUpstreamsChange?: (fn: () => void) => () => void }) {
+  const pipeline = await MiddlewarePipeline.build(undefined, "/tmp");
+  const mcp = buildProxyServer({ pipeline, namespace: true, slim: null, ...opts });
+  const [a, b] = InMemoryTransport.createLinkedPair();
+  const client = new Client({ name: "t", version: "0" }, { capabilities: {} });
+  await Promise.all([mcp.connect(a), client.connect(b)]);
+  return { client, mcp };
+}
+
+const upstreamWithTool = (name: string, tool: string, text: string) =>
+  ({
+    name,
+    tools: [{ server: name, name: tool, inputSchema: { type: "object" } }],
+    resources: [],
+    prompts: [],
+    client: { callTool: async () => ({ content: [{ type: "text", text }] }) },
+  }) as unknown as UpstreamServer;
+
+test("builtins are listed first, evaluated lazily, and callable without an upstream", async () => {
+  let desc = "v1";
+  const builtin: BuiltinTool = {
+    name: "manage_mcps",
+    description: () => desc,
+    inputSchema: { type: "object" },
+    call: async (args) => ({ text: `hi ${JSON.stringify(args)}` }),
+  };
+  const { client } = await connectProxy({ upstreams: [upstreamWithTool("s", "t", "x")], builtins: [builtin] });
+  const first = await client.listTools();
+  assert.deepEqual(first.tools.map((t) => t.name), ["manage_mcps", "s__t"]);
+  desc = "v2";
+  assert.equal((await client.listTools()).tools[0].description, "v2");
+  const out = (await client.callTool({ name: "manage_mcps", arguments: { a: 1 } })) as { content: { text: string }[]; isError?: boolean };
+  assert.equal(out.content[0].text, 'hi {"a":1}');
+  assert.equal(out.isError, false);
+});
+
+test("builtin errors surface as isError results", async () => {
+  const builtin: BuiltinTool = { name: "b", description: () => "", inputSchema: { type: "object" }, call: async () => ({ text: "nope", isError: true }) };
+  const { client } = await connectProxy({ upstreams: [], builtins: [builtin] });
+  const out = (await client.callTool({ name: "b", arguments: {} })) as { isError?: boolean };
+  assert.equal(out.isError, true);
+});
+
+test("live upstream changes: routes rebuilt, list_changed sent, unsubscribed on close", async () => {
+  const upstreams: UpstreamServer[] = [];
+  const listeners = new Set<() => void>();
+  let unsubscribed = false;
+  const { client, mcp } = await connectProxy({
+    upstreams,
+    onUpstreamsChange: (fn) => {
+      listeners.add(fn);
+      return () => {
+        unsubscribed = true;
+        listeners.delete(fn);
+      };
+    },
+  });
+  await assert.rejects(client.callTool({ name: "s__t", arguments: {} }), /Unknown tool/);
+
+  const notified = new Promise<void>((resolve) => client.setNotificationHandler(ToolListChangedNotificationSchema, () => resolve()));
+  upstreams.push(upstreamWithTool("s", "t", "fresh"));
+  for (const fn of listeners) fn();
+  await notified;
+
+  assert.deepEqual((await client.listTools()).tools.map((t) => t.name), ["s__t"]);
+  const out = (await client.callTool({ name: "s__t", arguments: {} })) as { content: { text: string }[] };
+  assert.equal(out.content[0].text, "fresh");
+
+  await mcp.close();
+  assert.equal(unsubscribed, true);
+});
