@@ -1,0 +1,858 @@
+[
+  {
+    "id": "brave-search",
+    "name": "Brave Search",
+    "description": "Web and local search through the Brave Search API.",
+    "category": "Web & search",
+    "homepage": "https://github.com/modelcontextprotocol/servers-archived/tree/main/src/brave-search",
+    "logo": "https://cdn.simpleicons.org/brave",
+    "tags": [
+      "search",
+      "web"
+    ],
+    "setup": "Set BRAVE_API_KEY.",
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-brave-search"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"brave-search\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-brave-search\"\n      ],\n      \"env\": {\n        \"BRAVE_API_KEY\": \"${BRAVE_API_KEY}\"\n      }\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=brave-search&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBtb2RlbGNvbnRleHRwcm90b2NvbC9zZXJ2ZXItYnJhdmUtc2VhcmNoIl0sImVudiI6eyJCUkFWRV9BUElfS0VZIjoiJHtCUkFWRV9BUElfS0VZfSJ9fQ%3D%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22brave-search%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-brave-search%22%5D%2C%22env%22%3A%7B%22BRAVE_API_KEY%22%3A%22%24%7BBRAVE_API_KEY%7D%22%7D%7D",
+      "claudeCode": "claude mcp add-json brave-search '{\"command\":\"npx\",\"args\":[\"-y\",\"@modelcontextprotocol/server-brave-search\"],\"env\":{\"BRAVE_API_KEY\":\"${BRAVE_API_KEY}\"}}'"
+    }
+  },
+  {
+    "id": "chrome-devtools",
+    "name": "Chrome DevTools",
+    "description": "Drive and debug a live Chrome: performance traces, network, console, screenshots.",
+    "category": "Browser",
+    "homepage": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
+    "logo": "https://cdn.simpleicons.org/googlechrome",
+    "tags": [
+      "browser",
+      "debugging",
+      "performance"
+    ],
+    "setup": null,
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ]
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"chrome-devtools\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"chrome-devtools-mcp@latest\"\n      ]\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=chrome-devtools&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImNocm9tZS1kZXZ0b29scy1tY3BAbGF0ZXN0Il19",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22chrome-devtools%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22chrome-devtools-mcp%40latest%22%5D%7D",
+      "claudeCode": "claude mcp add-json chrome-devtools '{\"command\":\"npx\",\"args\":[\"-y\",\"chrome-devtools-mcp@latest\"]}'"
+    }
+  },
+  {
+    "id": "clickup",
+    "name": "ClickUp",
+    "description": "Search, create and update ClickUp tasks, docs, comments and time entries.",
+    "category": "Productivity",
+    "homepage": "https://developer.clickup.com/docs/connect-an-ai-assistant-to-clickups-mcp-server",
+    "logo": "https://cdn.simpleicons.org/clickup",
+    "tags": [
+      "tasks",
+      "project-management",
+      "oauth"
+    ],
+    "setup": "Browser login on first run (OAuth).",
+    "config": {
+      "url": "https://mcp.clickup.com/mcp"
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"clickup\": {\n      \"url\": \"https://mcp.clickup.com/mcp\"\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=clickup&config=eyJ1cmwiOiJodHRwczovL21jcC5jbGlja3VwLmNvbS9tY3AifQ%3D%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22clickup%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.clickup.com%2Fmcp%22%7D",
+      "claudeCode": "claude mcp add-json clickup '{\"url\":\"https://mcp.clickup.com/mcp\"}'"
+    }
+  },
+  {
+    "id": "cloudflare-docs",
+    "name": "Cloudflare Docs",
+    "description": "Up-to-date Cloudflare documentation search.",
+    "category": "Developer tools",
+    "homepage": "https://github.com/cloudflare/mcp-server-cloudflare",
+    "logo": "https://cdn.simpleicons.org/cloudflare",
+    "tags": [
+      "docs",
+      "cloud"
+    ],
+    "setup": null,
+    "config": {
+      "url": "https://docs.mcp.cloudflare.com/mcp",
+      "oauth": false
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"cloudflare-docs\": {\n      \"url\": \"https://docs.mcp.cloudflare.com/mcp\",\n      \"oauth\": false\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=cloudflare-docs&config=eyJ1cmwiOiJodHRwczovL2RvY3MubWNwLmNsb3VkZmxhcmUuY29tL21jcCIsIm9hdXRoIjpmYWxzZX0%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22cloudflare-docs%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fdocs.mcp.cloudflare.com%2Fmcp%22%2C%22oauth%22%3Afalse%7D",
+      "claudeCode": "claude mcp add-json cloudflare-docs '{\"url\":\"https://docs.mcp.cloudflare.com/mcp\",\"oauth\":false}'"
+    }
+  },
+  {
+    "id": "composio",
+    "name": "Composio",
+    "description": "One MCP endpoint for hundreds of SaaS apps (Gmail, Slack, GitHub, Notion…) with managed auth.",
+    "category": "Productivity",
+    "homepage": "https://composio.dev",
+    "logo": null,
+    "tags": [
+      "integrations",
+      "saas",
+      "automation"
+    ],
+    "setup": "Create an MCP server in the Composio dashboard and set COMPOSIO_MCP_URL to its URL.",
+    "config": {
+      "url": "${COMPOSIO_MCP_URL}",
+      "oauth": false
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"composio\": {\n      \"url\": \"${COMPOSIO_MCP_URL}\",\n      \"oauth\": false\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=composio&config=eyJ1cmwiOiIke0NPTVBPU0lPX01DUF9VUkx9Iiwib2F1dGgiOmZhbHNlfQ%3D%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22composio%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22%24%7BCOMPOSIO_MCP_URL%7D%22%2C%22oauth%22%3Afalse%7D",
+      "claudeCode": "claude mcp add-json composio '{\"url\":\"${COMPOSIO_MCP_URL}\",\"oauth\":false}'"
+    }
+  },
+  {
+    "id": "context7",
+    "name": "Context7",
+    "description": "Up-to-date library documentation and code examples.",
+    "category": "Web & search",
+    "homepage": "https://context7.com",
+    "logo": null,
+    "tags": [
+      "docs",
+      "libraries"
+    ],
+    "setup": "Set CONTEXT7_API_KEY.",
+    "config": {
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
+      }
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"context7\": {\n      \"url\": \"https://mcp.context7.com/mcp\",\n      \"headers\": {\n        \"CONTEXT7_API_KEY\": \"${CONTEXT7_API_KEY}\"\n      }\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=context7&config=eyJ1cmwiOiJodHRwczovL21jcC5jb250ZXh0Ny5jb20vbWNwIiwiaGVhZGVycyI6eyJDT05URVhUN19BUElfS0VZIjoiJHtDT05URVhUN19BUElfS0VZfSJ9fQ%3D%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22context7%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.context7.com%2Fmcp%22%2C%22headers%22%3A%7B%22CONTEXT7_API_KEY%22%3A%22%24%7BCONTEXT7_API_KEY%7D%22%7D%7D",
+      "claudeCode": "claude mcp add-json context7 '{\"url\":\"https://mcp.context7.com/mcp\",\"headers\":{\"CONTEXT7_API_KEY\":\"${CONTEXT7_API_KEY}\"}}'"
+    }
+  },
+  {
+    "id": "elevenlabs",
+    "name": "ElevenLabs",
+    "description": "Text-to-speech, voice cloning and audio tools.",
+    "category": "Creative",
+    "homepage": "https://github.com/elevenlabs/elevenlabs-mcp",
+    "logo": "https://cdn.simpleicons.org/elevenlabs",
+    "tags": [
+      "audio",
+      "voice",
+      "tts"
+    ],
+    "setup": "Requires uv (uvx). Set ELEVENLABS_API_KEY.",
+    "config": {
+      "command": "uvx",
+      "args": [
+        "elevenlabs-mcp"
+      ],
+      "env": {
+        "ELEVENLABS_API_KEY": "${ELEVENLABS_API_KEY}"
+      }
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"elevenlabs\": {\n      \"command\": \"uvx\",\n      \"args\": [\n        \"elevenlabs-mcp\"\n      ],\n      \"env\": {\n        \"ELEVENLABS_API_KEY\": \"${ELEVENLABS_API_KEY}\"\n      }\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=elevenlabs&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJlbGV2ZW5sYWJzLW1jcCJdLCJlbnYiOnsiRUxFVkVOTEFCU19BUElfS0VZIjoiJHtFTEVWRU5MQUJTX0FQSV9LRVl9In19",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22elevenlabs%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22elevenlabs-mcp%22%5D%2C%22env%22%3A%7B%22ELEVENLABS_API_KEY%22%3A%22%24%7BELEVENLABS_API_KEY%7D%22%7D%7D",
+      "claudeCode": "claude mcp add-json elevenlabs '{\"command\":\"uvx\",\"args\":[\"elevenlabs-mcp\"],\"env\":{\"ELEVENLABS_API_KEY\":\"${ELEVENLABS_API_KEY}\"}}'"
+    }
+  },
+  {
+    "id": "everything",
+    "name": "Everything",
+    "description": "Reference server exercising every MCP feature; handy for smoke tests.",
+    "category": "Developer tools",
+    "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/everything",
+    "logo": null,
+    "tags": [
+      "testing",
+      "demo"
+    ],
+    "setup": null,
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-everything"
+      ]
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"everything\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-everything\"\n      ]\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=everything&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBtb2RlbGNvbnRleHRwcm90b2NvbC9zZXJ2ZXItZXZlcnl0aGluZyJdfQ%3D%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22everything%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-everything%22%5D%7D",
+      "claudeCode": "claude mcp add-json everything '{\"command\":\"npx\",\"args\":[\"-y\",\"@modelcontextprotocol/server-everything\"]}'"
+    }
+  },
+  {
+    "id": "exa",
+    "name": "Exa",
+    "description": "Neural web search, page crawling and research through the Exa API.",
+    "category": "Web & search",
+    "homepage": "https://github.com/exa-labs/exa-mcp-server",
+    "logo": null,
+    "tags": [
+      "search",
+      "web",
+      "research"
+    ],
+    "setup": "Set EXA_API_KEY (https://dashboard.exa.ai/api-keys).",
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "exa-mcp-server"
+      ],
+      "env": {
+        "EXA_API_KEY": "${EXA_API_KEY}"
+      }
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"exa\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"exa-mcp-server\"\n      ],\n      \"env\": {\n        \"EXA_API_KEY\": \"${EXA_API_KEY}\"\n      }\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=exa&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImV4YS1tY3Atc2VydmVyIl0sImVudiI6eyJFWEFfQVBJX0tFWSI6IiR7RVhBX0FQSV9LRVl9In19",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22exa%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22exa-mcp-server%22%5D%2C%22env%22%3A%7B%22EXA_API_KEY%22%3A%22%24%7BEXA_API_KEY%7D%22%7D%7D",
+      "claudeCode": "claude mcp add-json exa '{\"command\":\"npx\",\"args\":[\"-y\",\"exa-mcp-server\"],\"env\":{\"EXA_API_KEY\":\"${EXA_API_KEY}\"}}'"
+    }
+  },
+  {
+    "id": "fetch",
+    "name": "Fetch",
+    "description": "Fetch web pages and convert them to markdown for the model.",
+    "category": "Web & search",
+    "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch",
+    "logo": null,
+    "tags": [
+      "web",
+      "http"
+    ],
+    "setup": "Requires uv (uvx).",
+    "config": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ]
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"fetch\": {\n      \"command\": \"uvx\",\n      \"args\": [\n        \"mcp-server-fetch\"\n      ]\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=fetch&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJtY3Atc2VydmVyLWZldGNoIl19",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22fetch%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-fetch%22%5D%7D",
+      "claudeCode": "claude mcp add-json fetch '{\"command\":\"uvx\",\"args\":[\"mcp-server-fetch\"]}'"
+    }
+  },
+  {
+    "id": "figma",
+    "name": "Figma",
+    "description": "Read Figma designs and components to generate code from them.",
+    "category": "Creative",
+    "homepage": "https://help.figma.com/hc/en-us/articles/32132100833559",
+    "logo": "https://cdn.simpleicons.org/figma",
+    "tags": [
+      "design",
+      "ui",
+      "oauth"
+    ],
+    "setup": "Browser login on first run (OAuth).",
+    "config": {
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"figma\": {\n      \"url\": \"https://mcp.figma.com/mcp\"\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=figma&config=eyJ1cmwiOiJodHRwczovL21jcC5maWdtYS5jb20vbWNwIn0%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22figma%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.figma.com%2Fmcp%22%7D",
+      "claudeCode": "claude mcp add-json figma '{\"url\":\"https://mcp.figma.com/mcp\"}'"
+    }
+  },
+  {
+    "id": "filesystem",
+    "name": "Filesystem",
+    "description": "Read, write and search files under directories you allow.",
+    "category": "Files & repos",
+    "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem",
+    "logo": null,
+    "tags": [
+      "files",
+      "local"
+    ],
+    "setup": "Replace /path/to/allowed/root with the directory to expose.",
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/path/to/allowed/root"
+      ]
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"filesystem\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-filesystem\",\n        \"/path/to/allowed/root\"\n      ]\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=filesystem&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBtb2RlbGNvbnRleHRwcm90b2NvbC9zZXJ2ZXItZmlsZXN5c3RlbSIsIi9wYXRoL3RvL2FsbG93ZWQvcm9vdCJdfQ%3D%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22filesystem%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-filesystem%22%2C%22%2Fpath%2Fto%2Fallowed%2Froot%22%5D%7D",
+      "claudeCode": "claude mcp add-json filesystem '{\"command\":\"npx\",\"args\":[\"-y\",\"@modelcontextprotocol/server-filesystem\",\"/path/to/allowed/root\"]}'"
+    }
+  },
+  {
+    "id": "firecrawl",
+    "name": "Firecrawl",
+    "description": "Scrape, crawl and extract structured data from websites.",
+    "category": "Web & search",
+    "homepage": "https://github.com/mendableai/firecrawl-mcp-server",
+    "logo": null,
+    "tags": [
+      "scraping",
+      "crawl",
+      "web"
+    ],
+    "setup": "Set FIRECRAWL_API_KEY.",
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "firecrawl-mcp"
+      ],
+      "env": {
+        "FIRECRAWL_API_KEY": "${FIRECRAWL_API_KEY}"
+      }
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"firecrawl\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"firecrawl-mcp\"\n      ],\n      \"env\": {\n        \"FIRECRAWL_API_KEY\": \"${FIRECRAWL_API_KEY}\"\n      }\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=firecrawl&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImZpcmVjcmF3bC1tY3AiXSwiZW52Ijp7IkZJUkVDUkFXTF9BUElfS0VZIjoiJHtGSVJFQ1JBV0xfQVBJX0tFWX0ifX0%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22firecrawl%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22firecrawl-mcp%22%5D%2C%22env%22%3A%7B%22FIRECRAWL_API_KEY%22%3A%22%24%7BFIRECRAWL_API_KEY%7D%22%7D%7D",
+      "claudeCode": "claude mcp add-json firecrawl '{\"command\":\"npx\",\"args\":[\"-y\",\"firecrawl-mcp\"],\"env\":{\"FIRECRAWL_API_KEY\":\"${FIRECRAWL_API_KEY}\"}}'"
+    }
+  },
+  {
+    "id": "git",
+    "name": "Git",
+    "description": "Read, search and inspect a local Git repository.",
+    "category": "Files & repos",
+    "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/git",
+    "logo": null,
+    "tags": [
+      "git",
+      "local"
+    ],
+    "setup": "Requires uv (uvx). Replace /path/to/repo with your repository.",
+    "config": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-git",
+        "--repository",
+        "/path/to/repo"
+      ]
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"git\": {\n      \"command\": \"uvx\",\n      \"args\": [\n        \"mcp-server-git\",\n        \"--repository\",\n        \"/path/to/repo\"\n      ]\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=git&config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJtY3Atc2VydmVyLWdpdCIsIi0tcmVwb3NpdG9yeSIsIi9wYXRoL3RvL3JlcG8iXX0%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22git%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-git%22%2C%22--repository%22%2C%22%2Fpath%2Fto%2Frepo%22%5D%7D",
+      "claudeCode": "claude mcp add-json git '{\"command\":\"uvx\",\"args\":[\"mcp-server-git\",\"--repository\",\"/path/to/repo\"]}'"
+    }
+  },
+  {
+    "id": "github",
+    "name": "GitHub",
+    "description": "Official GitHub MCP server — repos, issues, pull requests, actions and code search.",
+    "category": "Files & repos",
+    "homepage": "https://github.com/github/github-mcp-server",
+    "logo": "https://cdn.simpleicons.org/github",
+    "tags": [
+      "git",
+      "issues",
+      "pull-requests"
+    ],
+    "setup": "Set GITHUB_PERSONAL_ACCESS_TOKEN (https://github.com/settings/tokens).",
+    "config": {
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"github\": {\n      \"url\": \"https://api.githubcopilot.com/mcp/\",\n      \"headers\": {\n        \"Authorization\": \"Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}\"\n      }\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=github&config=eyJ1cmwiOiJodHRwczovL2FwaS5naXRodWJjb3BpbG90LmNvbS9tY3AvIiwiaGVhZGVycyI6eyJBdXRob3JpemF0aW9uIjoiQmVhcmVyICR7R0lUSFVCX1BFUlNPTkFMX0FDQ0VTU19UT0tFTn0ifX0%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22github%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fapi.githubcopilot.com%2Fmcp%2F%22%2C%22headers%22%3A%7B%22Authorization%22%3A%22Bearer%20%24%7BGITHUB_PERSONAL_ACCESS_TOKEN%7D%22%7D%7D",
+      "claudeCode": "claude mcp add-json github '{\"url\":\"https://api.githubcopilot.com/mcp/\",\"headers\":{\"Authorization\":\"Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}\"}}'"
+    }
+  },
+  {
+    "id": "github-npm",
+    "name": "GitHub (legacy npm)",
+    "description": "The original reference GitHub server, run locally through npx.",
+    "category": "Files & repos",
+    "homepage": "https://github.com/modelcontextprotocol/servers-archived/tree/main/src/github",
+    "logo": "https://cdn.simpleicons.org/github",
+    "tags": [
+      "git",
+      "issues",
+      "pull-requests"
+    ],
+    "setup": "Set GITHUB_PERSONAL_ACCESS_TOKEN (https://github.com/settings/tokens).",
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"github-npm\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-github\"\n      ],\n      \"env\": {\n        \"GITHUB_PERSONAL_ACCESS_TOKEN\": \"${GITHUB_PERSONAL_ACCESS_TOKEN}\"\n      }\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=github-npm&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBtb2RlbGNvbnRleHRwcm90b2NvbC9zZXJ2ZXItZ2l0aHViIl0sImVudiI6eyJHSVRIVUJfUEVSU09OQUxfQUNDRVNTX1RPS0VOIjoiJHtHSVRIVUJfUEVSU09OQUxfQUNDRVNTX1RPS0VOfSJ9fQ%3D%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22github-npm%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-github%22%5D%2C%22env%22%3A%7B%22GITHUB_PERSONAL_ACCESS_TOKEN%22%3A%22%24%7BGITHUB_PERSONAL_ACCESS_TOKEN%7D%22%7D%7D",
+      "claudeCode": "claude mcp add-json github-npm '{\"command\":\"npx\",\"args\":[\"-y\",\"@modelcontextprotocol/server-github\"],\"env\":{\"GITHUB_PERSONAL_ACCESS_TOKEN\":\"${GITHUB_PERSONAL_ACCESS_TOKEN}\"}}'"
+    }
+  },
+  {
+    "id": "huggingface",
+    "name": "Hugging Face",
+    "description": "Search models, datasets, Spaces and papers on the Hugging Face Hub.",
+    "category": "AI & reasoning",
+    "homepage": "https://huggingface.co/settings/mcp",
+    "logo": "https://cdn.simpleicons.org/huggingface",
+    "tags": [
+      "models",
+      "datasets",
+      "oauth"
+    ],
+    "setup": "Browser login on first run (OAuth).",
+    "config": {
+      "url": "https://huggingface.co/mcp"
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"huggingface\": {\n      \"url\": \"https://huggingface.co/mcp\"\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=huggingface&config=eyJ1cmwiOiJodHRwczovL2h1Z2dpbmdmYWNlLmNvL21jcCJ9",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22huggingface%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fhuggingface.co%2Fmcp%22%7D",
+      "claudeCode": "claude mcp add-json huggingface '{\"url\":\"https://huggingface.co/mcp\"}'"
+    }
+  },
+  {
+    "id": "linear",
+    "name": "Linear",
+    "description": "Find, create and update Linear issues and projects.",
+    "category": "Productivity",
+    "homepage": "https://linear.app/docs/mcp",
+    "logo": "https://cdn.simpleicons.org/linear",
+    "tags": [
+      "issues",
+      "project-management",
+      "oauth"
+    ],
+    "setup": "Browser login on first run (OAuth).",
+    "config": {
+      "url": "https://mcp.linear.app/mcp"
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"linear\": {\n      \"url\": \"https://mcp.linear.app/mcp\"\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=linear&config=eyJ1cmwiOiJodHRwczovL21jcC5saW5lYXIuYXBwL21jcCJ9",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22linear%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.linear.app%2Fmcp%22%7D",
+      "claudeCode": "claude mcp add-json linear '{\"url\":\"https://mcp.linear.app/mcp\"}'"
+    }
+  },
+  {
+    "id": "memory",
+    "name": "Memory",
+    "description": "Persistent knowledge graph the assistant can read and update.",
+    "category": "AI & reasoning",
+    "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/memory",
+    "logo": null,
+    "tags": [
+      "memory",
+      "knowledge-graph"
+    ],
+    "setup": null,
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"memory\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-memory\"\n      ]\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=memory&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBtb2RlbGNvbnRleHRwcm90b2NvbC9zZXJ2ZXItbWVtb3J5Il19",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22memory%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-memory%22%5D%7D",
+      "claudeCode": "claude mcp add-json memory '{\"command\":\"npx\",\"args\":[\"-y\",\"@modelcontextprotocol/server-memory\"]}'"
+    }
+  },
+  {
+    "id": "mongodb",
+    "name": "MongoDB",
+    "description": "Query and manage MongoDB databases and Atlas.",
+    "category": "Data",
+    "homepage": "https://github.com/mongodb-js/mongodb-mcp-server",
+    "logo": "https://cdn.simpleicons.org/mongodb",
+    "tags": [
+      "database",
+      "nosql"
+    ],
+    "setup": "Set MDB_MCP_CONNECTION_STRING.",
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mongodb-mcp-server"
+      ],
+      "env": {
+        "MDB_MCP_CONNECTION_STRING": "${MDB_MCP_CONNECTION_STRING}"
+      }
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"mongodb\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"mongodb-mcp-server\"\n      ],\n      \"env\": {\n        \"MDB_MCP_CONNECTION_STRING\": \"${MDB_MCP_CONNECTION_STRING}\"\n      }\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=mongodb&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm1vbmdvZGItbWNwLXNlcnZlciJdLCJlbnYiOnsiTURCX01DUF9DT05ORUNUSU9OX1NUUklORyI6IiR7TURCX01DUF9DT05ORUNUSU9OX1NUUklOR30ifX0%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22mongodb%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22mongodb-mcp-server%22%5D%2C%22env%22%3A%7B%22MDB_MCP_CONNECTION_STRING%22%3A%22%24%7BMDB_MCP_CONNECTION_STRING%7D%22%7D%7D",
+      "claudeCode": "claude mcp add-json mongodb '{\"command\":\"npx\",\"args\":[\"-y\",\"mongodb-mcp-server\"],\"env\":{\"MDB_MCP_CONNECTION_STRING\":\"${MDB_MCP_CONNECTION_STRING}\"}}'"
+    }
+  },
+  {
+    "id": "nano-banana",
+    "name": "Nano Banana",
+    "description": "Generate and edit images with Google's Gemini image model (Nano Banana).",
+    "category": "Creative",
+    "homepage": "https://github.com/YCSE/nanobanana-mcp",
+    "logo": null,
+    "tags": [
+      "images",
+      "gemini",
+      "generation"
+    ],
+    "setup": "Set GEMINI_API_KEY (https://aistudio.google.com/apikey).",
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@ycse/nanobanana-mcp"
+      ],
+      "env": {
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}"
+      }
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"nano-banana\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@ycse/nanobanana-mcp\"\n      ],\n      \"env\": {\n        \"GEMINI_API_KEY\": \"${GEMINI_API_KEY}\"\n      }\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=nano-banana&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkB5Y3NlL25hbm9iYW5hbmEtbWNwIl0sImVudiI6eyJHRU1JTklfQVBJX0tFWSI6IiR7R0VNSU5JX0FQSV9LRVl9In19",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22nano-banana%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40ycse%2Fnanobanana-mcp%22%5D%2C%22env%22%3A%7B%22GEMINI_API_KEY%22%3A%22%24%7BGEMINI_API_KEY%7D%22%7D%7D",
+      "claudeCode": "claude mcp add-json nano-banana '{\"command\":\"npx\",\"args\":[\"-y\",\"@ycse/nanobanana-mcp\"],\"env\":{\"GEMINI_API_KEY\":\"${GEMINI_API_KEY}\"}}'"
+    }
+  },
+  {
+    "id": "neon",
+    "name": "Neon",
+    "description": "Manage Neon Postgres projects, branches and run SQL.",
+    "category": "Data",
+    "homepage": "https://neon.com/docs/ai/neon-mcp-server",
+    "logo": null,
+    "tags": [
+      "database",
+      "postgres",
+      "oauth"
+    ],
+    "setup": "Browser login on first run (OAuth).",
+    "config": {
+      "url": "https://mcp.neon.tech/mcp"
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"neon\": {\n      \"url\": \"https://mcp.neon.tech/mcp\"\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=neon&config=eyJ1cmwiOiJodHRwczovL21jcC5uZW9uLnRlY2gvbWNwIn0%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22neon%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.neon.tech%2Fmcp%22%7D",
+      "claudeCode": "claude mcp add-json neon '{\"url\":\"https://mcp.neon.tech/mcp\"}'"
+    }
+  },
+  {
+    "id": "notion",
+    "name": "Notion",
+    "description": "Search and edit Notion pages and databases.",
+    "category": "Productivity",
+    "homepage": "https://developers.notion.com/docs/mcp",
+    "logo": "https://cdn.simpleicons.org/notion",
+    "tags": [
+      "docs",
+      "wiki",
+      "oauth"
+    ],
+    "setup": "Browser login on first run (OAuth).",
+    "config": {
+      "url": "https://mcp.notion.com/mcp"
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"notion\": {\n      \"url\": \"https://mcp.notion.com/mcp\"\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=notion&config=eyJ1cmwiOiJodHRwczovL21jcC5ub3Rpb24uY29tL21jcCJ9",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22notion%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.notion.com%2Fmcp%22%7D",
+      "claudeCode": "claude mcp add-json notion '{\"url\":\"https://mcp.notion.com/mcp\"}'"
+    }
+  },
+  {
+    "id": "playwright",
+    "name": "Playwright",
+    "description": "Browser automation driven by the accessibility tree.",
+    "category": "Browser",
+    "homepage": "https://github.com/microsoft/playwright-mcp",
+    "logo": null,
+    "tags": [
+      "browser",
+      "testing"
+    ],
+    "setup": "Run `npx playwright install` once.",
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"playwright\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@playwright/mcp@latest\"\n      ]\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=playwright&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBwbGF5d3JpZ2h0L21jcEBsYXRlc3QiXX0%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22playwright%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40playwright%2Fmcp%40latest%22%5D%7D",
+      "claudeCode": "claude mcp add-json playwright '{\"command\":\"npx\",\"args\":[\"-y\",\"@playwright/mcp@latest\"]}'"
+    }
+  },
+  {
+    "id": "postgres",
+    "name": "PostgreSQL",
+    "description": "Read-only SQL queries and schema inspection.",
+    "category": "Data",
+    "homepage": "https://github.com/modelcontextprotocol/servers-archived/tree/main/src/postgres",
+    "logo": "https://cdn.simpleicons.org/postgresql",
+    "tags": [
+      "database",
+      "sql"
+    ],
+    "setup": "Set DATABASE_URL to your connection string.",
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "${DATABASE_URL:-postgresql://localhost:5432/mydb}"
+      ]
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"postgres\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-postgres\",\n        \"${DATABASE_URL:-postgresql://localhost:5432/mydb}\"\n      ]\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=postgres&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBtb2RlbGNvbnRleHRwcm90b2NvbC9zZXJ2ZXItcG9zdGdyZXMiLCIke0RBVEFCQVNFX1VSTDotcG9zdGdyZXNxbDovL2xvY2FsaG9zdDo1NDMyL215ZGJ9Il19",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22postgres%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-postgres%22%2C%22%24%7BDATABASE_URL%3A-postgresql%3A%2F%2Flocalhost%3A5432%2Fmydb%7D%22%5D%7D",
+      "claudeCode": "claude mcp add-json postgres '{\"command\":\"npx\",\"args\":[\"-y\",\"@modelcontextprotocol/server-postgres\",\"${DATABASE_URL:-postgresql://localhost:5432/mydb}\"]}'"
+    }
+  },
+  {
+    "id": "puppeteer",
+    "name": "Puppeteer",
+    "description": "Headless Chrome automation and screenshots.",
+    "category": "Browser",
+    "homepage": "https://github.com/modelcontextprotocol/servers-archived/tree/main/src/puppeteer",
+    "logo": "https://cdn.simpleicons.org/puppeteer",
+    "tags": [
+      "browser",
+      "screenshots"
+    ],
+    "setup": null,
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ]
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"puppeteer\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-puppeteer\"\n      ]\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=puppeteer&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBtb2RlbGNvbnRleHRwcm90b2NvbC9zZXJ2ZXItcHVwcGV0ZWVyIl19",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22puppeteer%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-puppeteer%22%5D%7D",
+      "claudeCode": "claude mcp add-json puppeteer '{\"command\":\"npx\",\"args\":[\"-y\",\"@modelcontextprotocol/server-puppeteer\"]}'"
+    }
+  },
+  {
+    "id": "sentry",
+    "name": "Sentry",
+    "description": "Inspect errors, issues and releases from Sentry.",
+    "category": "Developer tools",
+    "homepage": "https://docs.sentry.io/product/sentry-mcp/",
+    "logo": "https://cdn.simpleicons.org/sentry",
+    "tags": [
+      "errors",
+      "monitoring",
+      "oauth"
+    ],
+    "setup": "Browser login on first run (OAuth).",
+    "config": {
+      "url": "https://mcp.sentry.dev/mcp"
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"sentry\": {\n      \"url\": \"https://mcp.sentry.dev/mcp\"\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=sentry&config=eyJ1cmwiOiJodHRwczovL21jcC5zZW50cnkuZGV2L21jcCJ9",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22sentry%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.sentry.dev%2Fmcp%22%7D",
+      "claudeCode": "claude mcp add-json sentry '{\"url\":\"https://mcp.sentry.dev/mcp\"}'"
+    }
+  },
+  {
+    "id": "sequential-thinking",
+    "name": "Sequential Thinking",
+    "description": "Structured, revisable step-by-step reasoning.",
+    "category": "AI & reasoning",
+    "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking",
+    "logo": null,
+    "tags": [
+      "reasoning"
+    ],
+    "setup": null,
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"sequential-thinking\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-sequential-thinking\"\n      ]\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=sequential-thinking&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBtb2RlbGNvbnRleHRwcm90b2NvbC9zZXJ2ZXItc2VxdWVudGlhbC10aGlua2luZyJdfQ%3D%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22sequential-thinking%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-sequential-thinking%22%5D%7D",
+      "claudeCode": "claude mcp add-json sequential-thinking '{\"command\":\"npx\",\"args\":[\"-y\",\"@modelcontextprotocol/server-sequential-thinking\"]}'"
+    }
+  },
+  {
+    "id": "slack",
+    "name": "Slack",
+    "description": "Read channels and post messages in a Slack workspace.",
+    "category": "Productivity",
+    "homepage": "https://github.com/modelcontextprotocol/servers-archived/tree/main/src/slack",
+    "logo": "https://cdn.simpleicons.org/slack",
+    "tags": [
+      "chat",
+      "messaging"
+    ],
+    "setup": "Set SLACK_BOT_TOKEN and SLACK_TEAM_ID.",
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-slack"
+      ],
+      "env": {
+        "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+        "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
+      }
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"slack\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-slack\"\n      ],\n      \"env\": {\n        \"SLACK_BOT_TOKEN\": \"${SLACK_BOT_TOKEN}\",\n        \"SLACK_TEAM_ID\": \"${SLACK_TEAM_ID}\"\n      }\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=slack&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBtb2RlbGNvbnRleHRwcm90b2NvbC9zZXJ2ZXItc2xhY2siXSwiZW52Ijp7IlNMQUNLX0JPVF9UT0tFTiI6IiR7U0xBQ0tfQk9UX1RPS0VOfSIsIlNMQUNLX1RFQU1fSUQiOiIke1NMQUNLX1RFQU1fSUR9In19",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22slack%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-slack%22%5D%2C%22env%22%3A%7B%22SLACK_BOT_TOKEN%22%3A%22%24%7BSLACK_BOT_TOKEN%7D%22%2C%22SLACK_TEAM_ID%22%3A%22%24%7BSLACK_TEAM_ID%7D%22%7D%7D",
+      "claudeCode": "claude mcp add-json slack '{\"command\":\"npx\",\"args\":[\"-y\",\"@modelcontextprotocol/server-slack\"],\"env\":{\"SLACK_BOT_TOKEN\":\"${SLACK_BOT_TOKEN}\",\"SLACK_TEAM_ID\":\"${SLACK_TEAM_ID}\"}}'"
+    }
+  },
+  {
+    "id": "stripe",
+    "name": "Stripe",
+    "description": "Work with Stripe customers, payments, subscriptions and docs.",
+    "category": "Developer tools",
+    "homepage": "https://docs.stripe.com/mcp",
+    "logo": "https://cdn.simpleicons.org/stripe",
+    "tags": [
+      "payments",
+      "oauth"
+    ],
+    "setup": "Browser login on first run (OAuth).",
+    "config": {
+      "url": "https://mcp.stripe.com"
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"stripe\": {\n      \"url\": \"https://mcp.stripe.com\"\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=stripe&config=eyJ1cmwiOiJodHRwczovL21jcC5zdHJpcGUuY29tIn0%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22stripe%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.stripe.com%22%7D",
+      "claudeCode": "claude mcp add-json stripe '{\"url\":\"https://mcp.stripe.com\"}'"
+    }
+  },
+  {
+    "id": "supabase",
+    "name": "Supabase",
+    "description": "Manage Supabase projects, run SQL, and inspect your database.",
+    "category": "Data",
+    "homepage": "https://supabase.com/docs/guides/getting-started/mcp",
+    "logo": "https://cdn.simpleicons.org/supabase",
+    "tags": [
+      "database",
+      "postgres",
+      "oauth"
+    ],
+    "setup": "Browser login on first run (OAuth).",
+    "config": {
+      "url": "https://mcp.supabase.com/mcp"
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"supabase\": {\n      \"url\": \"https://mcp.supabase.com/mcp\"\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=supabase&config=eyJ1cmwiOiJodHRwczovL21jcC5zdXBhYmFzZS5jb20vbWNwIn0%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22supabase%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.supabase.com%2Fmcp%22%7D",
+      "claudeCode": "claude mcp add-json supabase '{\"url\":\"https://mcp.supabase.com/mcp\"}'"
+    }
+  },
+  {
+    "id": "tavily",
+    "name": "Tavily",
+    "description": "Web search and content extraction built for AI agents.",
+    "category": "Web & search",
+    "homepage": "https://github.com/tavily-ai/tavily-mcp",
+    "logo": null,
+    "tags": [
+      "search",
+      "web",
+      "extract"
+    ],
+    "setup": "Set TAVILY_API_KEY.",
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tavily-mcp@latest"
+      ],
+      "env": {
+        "TAVILY_API_KEY": "${TAVILY_API_KEY}"
+      }
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"tavily\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"tavily-mcp@latest\"\n      ],\n      \"env\": {\n        \"TAVILY_API_KEY\": \"${TAVILY_API_KEY}\"\n      }\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=tavily&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsInRhdmlseS1tY3BAbGF0ZXN0Il0sImVudiI6eyJUQVZJTFlfQVBJX0tFWSI6IiR7VEFWSUxZX0FQSV9LRVl9In19",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22tavily%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22tavily-mcp%40latest%22%5D%2C%22env%22%3A%7B%22TAVILY_API_KEY%22%3A%22%24%7BTAVILY_API_KEY%7D%22%7D%7D",
+      "claudeCode": "claude mcp add-json tavily '{\"command\":\"npx\",\"args\":[\"-y\",\"tavily-mcp@latest\"],\"env\":{\"TAVILY_API_KEY\":\"${TAVILY_API_KEY}\"}}'"
+    }
+  },
+  {
+    "id": "vercel",
+    "name": "Vercel",
+    "description": "Search Vercel docs and manage projects and deployments.",
+    "category": "Developer tools",
+    "homepage": "https://vercel.com/docs/mcp/vercel-mcp",
+    "logo": "https://cdn.simpleicons.org/vercel",
+    "tags": [
+      "deploy",
+      "hosting",
+      "oauth"
+    ],
+    "setup": "Browser login on first run (OAuth).",
+    "config": {
+      "url": "https://mcp.vercel.com"
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"vercel\": {\n      \"url\": \"https://mcp.vercel.com\"\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=vercel&config=eyJ1cmwiOiJodHRwczovL21jcC52ZXJjZWwuY29tIn0%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22vercel%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.vercel.com%22%7D",
+      "claudeCode": "claude mcp add-json vercel '{\"url\":\"https://mcp.vercel.com\"}'"
+    }
+  }
+]

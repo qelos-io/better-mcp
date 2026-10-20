@@ -1,0 +1,389 @@
+# better-mcp marketplace registry. Add an entry, run `npm run marketplace:build`,
+# and open a PR. See marketplace/README.md for the field reference.
+servers:
+  - id: filesystem
+    name: Filesystem
+    description: Read, write and search files under directories you allow.
+    category: Files & repos
+    homepage: https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem
+    tags: [files, local]
+    setup: Replace /path/to/allowed/root with the directory to expose.
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/root"]
+
+  - id: git
+    name: Git
+    description: Read, search and inspect a local Git repository.
+    category: Files & repos
+    homepage: https://github.com/modelcontextprotocol/servers/tree/main/src/git
+    tags: [git, local]
+    setup: Requires uv (uvx). Replace /path/to/repo with your repository.
+    config:
+      command: uvx
+      args: ["mcp-server-git", "--repository", "/path/to/repo"]
+
+  - id: github
+    name: GitHub
+    description: Official GitHub MCP server — repos, issues, pull requests, actions and code search.
+    category: Files & repos
+    logo: https://cdn.simpleicons.org/github
+    homepage: https://github.com/github/github-mcp-server
+    tags: [git, issues, pull-requests]
+    setup: Set GITHUB_PERSONAL_ACCESS_TOKEN (https://github.com/settings/tokens).
+    config:
+      url: https://api.githubcopilot.com/mcp/
+      headers:
+        Authorization: "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
+
+  - id: github-npm
+    name: GitHub (legacy npm)
+    description: The original reference GitHub server, run locally through npx.
+    category: Files & repos
+    logo: https://cdn.simpleicons.org/github
+    homepage: https://github.com/modelcontextprotocol/servers-archived/tree/main/src/github
+    tags: [git, issues, pull-requests]
+    setup: Set GITHUB_PERSONAL_ACCESS_TOKEN (https://github.com/settings/tokens).
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-github"]
+      env:
+        GITHUB_PERSONAL_ACCESS_TOKEN: "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+
+  - id: postgres
+    name: PostgreSQL
+    description: Read-only SQL queries and schema inspection.
+    category: Data
+    logo: https://cdn.simpleicons.org/postgresql
+    homepage: https://github.com/modelcontextprotocol/servers-archived/tree/main/src/postgres
+    tags: [database, sql]
+    setup: Set DATABASE_URL to your connection string.
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-postgres", "${DATABASE_URL:-postgresql://localhost:5432/mydb}"]
+
+  - id: memory
+    name: Memory
+    description: Persistent knowledge graph the assistant can read and update.
+    category: AI & reasoning
+    homepage: https://github.com/modelcontextprotocol/servers/tree/main/src/memory
+    tags: [memory, knowledge-graph]
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-memory"]
+
+  - id: sequential-thinking
+    name: Sequential Thinking
+    description: Structured, revisable step-by-step reasoning.
+    category: AI & reasoning
+    homepage: https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking
+    tags: [reasoning]
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+
+  - id: fetch
+    name: Fetch
+    description: Fetch web pages and convert them to markdown for the model.
+    category: Web & search
+    homepage: https://github.com/modelcontextprotocol/servers/tree/main/src/fetch
+    tags: [web, http]
+    setup: Requires uv (uvx).
+    config:
+      command: uvx
+      args: ["mcp-server-fetch"]
+
+  - id: brave-search
+    name: Brave Search
+    description: Web and local search through the Brave Search API.
+    category: Web & search
+    logo: https://cdn.simpleicons.org/brave
+    homepage: https://github.com/modelcontextprotocol/servers-archived/tree/main/src/brave-search
+    tags: [search, web]
+    setup: Set BRAVE_API_KEY.
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-brave-search"]
+      env:
+        BRAVE_API_KEY: "${BRAVE_API_KEY}"
+
+  - id: context7
+    name: Context7
+    description: Up-to-date library documentation and code examples.
+    category: Web & search
+    homepage: https://context7.com
+    tags: [docs, libraries]
+    setup: Set CONTEXT7_API_KEY.
+    config:
+      url: https://mcp.context7.com/mcp
+      headers:
+        CONTEXT7_API_KEY: "${CONTEXT7_API_KEY}"
+
+  - id: playwright
+    name: Playwright
+    description: Browser automation driven by the accessibility tree.
+    category: Browser
+    homepage: https://github.com/microsoft/playwright-mcp
+    tags: [browser, testing]
+    setup: Run `npx playwright install` once.
+    config:
+      command: npx
+      args: ["-y", "@playwright/mcp@latest"]
+
+  - id: puppeteer
+    name: Puppeteer
+    description: Headless Chrome automation and screenshots.
+    category: Browser
+    logo: https://cdn.simpleicons.org/puppeteer
+    homepage: https://github.com/modelcontextprotocol/servers-archived/tree/main/src/puppeteer
+    tags: [browser, screenshots]
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-puppeteer"]
+
+  - id: slack
+    name: Slack
+    description: Read channels and post messages in a Slack workspace.
+    category: Productivity
+    logo: https://cdn.simpleicons.org/slack
+    homepage: https://github.com/modelcontextprotocol/servers-archived/tree/main/src/slack
+    tags: [chat, messaging]
+    setup: Set SLACK_BOT_TOKEN and SLACK_TEAM_ID.
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-slack"]
+      env:
+        SLACK_BOT_TOKEN: "${SLACK_BOT_TOKEN}"
+        SLACK_TEAM_ID: "${SLACK_TEAM_ID}"
+
+  - id: clickup
+    name: ClickUp
+    description: Search, create and update ClickUp tasks, docs, comments and time entries.
+    category: Productivity
+    logo: https://cdn.simpleicons.org/clickup
+    homepage: https://developer.clickup.com/docs/connect-an-ai-assistant-to-clickups-mcp-server
+    tags: [tasks, project-management, oauth]
+    setup: Browser login on first run (OAuth).
+    config:
+      url: https://mcp.clickup.com/mcp
+
+  - id: linear
+    name: Linear
+    description: Find, create and update Linear issues and projects.
+    category: Productivity
+    logo: https://cdn.simpleicons.org/linear
+    homepage: https://linear.app/docs/mcp
+    tags: [issues, project-management, oauth]
+    setup: Browser login on first run (OAuth).
+    config:
+      url: https://mcp.linear.app/mcp
+
+  - id: notion
+    name: Notion
+    description: Search and edit Notion pages and databases.
+    category: Productivity
+    logo: https://cdn.simpleicons.org/notion
+    homepage: https://developers.notion.com/docs/mcp
+    tags: [docs, wiki, oauth]
+    setup: Browser login on first run (OAuth).
+    config:
+      url: https://mcp.notion.com/mcp
+
+  - id: sentry
+    name: Sentry
+    description: Inspect errors, issues and releases from Sentry.
+    category: Developer tools
+    logo: https://cdn.simpleicons.org/sentry
+    homepage: https://docs.sentry.io/product/sentry-mcp/
+    tags: [errors, monitoring, oauth]
+    setup: Browser login on first run (OAuth).
+    config:
+      url: https://mcp.sentry.dev/mcp
+
+  - id: everything
+    name: Everything
+    description: Reference server exercising every MCP feature; handy for smoke tests.
+    category: Developer tools
+    homepage: https://github.com/modelcontextprotocol/servers/tree/main/src/everything
+    tags: [testing, demo]
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-everything"]
+
+  - id: exa
+    name: Exa
+    description: Neural web search, page crawling and research through the Exa API.
+    category: Web & search
+    homepage: https://github.com/exa-labs/exa-mcp-server
+    tags: [search, web, research]
+    setup: Set EXA_API_KEY (https://dashboard.exa.ai/api-keys).
+    config:
+      command: npx
+      args: ["-y", "exa-mcp-server"]
+      env:
+        EXA_API_KEY: "${EXA_API_KEY}"
+
+  - id: tavily
+    name: Tavily
+    description: Web search and content extraction built for AI agents.
+    category: Web & search
+    homepage: https://github.com/tavily-ai/tavily-mcp
+    tags: [search, web, extract]
+    setup: Set TAVILY_API_KEY.
+    config:
+      command: npx
+      args: ["-y", "tavily-mcp@latest"]
+      env:
+        TAVILY_API_KEY: "${TAVILY_API_KEY}"
+
+  - id: firecrawl
+    name: Firecrawl
+    description: Scrape, crawl and extract structured data from websites.
+    category: Web & search
+    homepage: https://github.com/mendableai/firecrawl-mcp-server
+    tags: [scraping, crawl, web]
+    setup: Set FIRECRAWL_API_KEY.
+    config:
+      command: npx
+      args: ["-y", "firecrawl-mcp"]
+      env:
+        FIRECRAWL_API_KEY: "${FIRECRAWL_API_KEY}"
+
+  - id: composio
+    name: Composio
+    description: One MCP endpoint for hundreds of SaaS apps (Gmail, Slack, GitHub, Notion…) with managed auth.
+    category: Productivity
+    homepage: https://composio.dev
+    tags: [integrations, saas, automation]
+    setup: Create an MCP server in the Composio dashboard and set COMPOSIO_MCP_URL to its URL.
+    config:
+      url: "${COMPOSIO_MCP_URL}"
+      oauth: false
+
+  - id: nano-banana
+    name: Nano Banana
+    description: Generate and edit images with Google's Gemini image model (Nano Banana).
+    category: Creative
+    homepage: https://github.com/YCSE/nanobanana-mcp
+    tags: [images, gemini, generation]
+    setup: Set GEMINI_API_KEY (https://aistudio.google.com/apikey).
+    config:
+      command: npx
+      args: ["-y", "@ycse/nanobanana-mcp"]
+      env:
+        GEMINI_API_KEY: "${GEMINI_API_KEY}"
+
+  - id: elevenlabs
+    name: ElevenLabs
+    description: Text-to-speech, voice cloning and audio tools.
+    category: Creative
+    logo: https://cdn.simpleicons.org/elevenlabs
+    homepage: https://github.com/elevenlabs/elevenlabs-mcp
+    tags: [audio, voice, tts]
+    setup: Requires uv (uvx). Set ELEVENLABS_API_KEY.
+    config:
+      command: uvx
+      args: ["elevenlabs-mcp"]
+      env:
+        ELEVENLABS_API_KEY: "${ELEVENLABS_API_KEY}"
+
+  - id: figma
+    name: Figma
+    description: Read Figma designs and components to generate code from them.
+    category: Creative
+    logo: https://cdn.simpleicons.org/figma
+    homepage: https://help.figma.com/hc/en-us/articles/32132100833559
+    tags: [design, ui, oauth]
+    setup: Browser login on first run (OAuth).
+    config:
+      url: https://mcp.figma.com/mcp
+
+  - id: supabase
+    name: Supabase
+    description: Manage Supabase projects, run SQL, and inspect your database.
+    category: Data
+    logo: https://cdn.simpleicons.org/supabase
+    homepage: https://supabase.com/docs/guides/getting-started/mcp
+    tags: [database, postgres, oauth]
+    setup: Browser login on first run (OAuth).
+    config:
+      url: https://mcp.supabase.com/mcp
+
+  - id: neon
+    name: Neon
+    description: Manage Neon Postgres projects, branches and run SQL.
+    category: Data
+    homepage: https://neon.com/docs/ai/neon-mcp-server
+    tags: [database, postgres, oauth]
+    setup: Browser login on first run (OAuth).
+    config:
+      url: https://mcp.neon.tech/mcp
+
+  - id: mongodb
+    name: MongoDB
+    description: Query and manage MongoDB databases and Atlas.
+    category: Data
+    logo: https://cdn.simpleicons.org/mongodb
+    homepage: https://github.com/mongodb-js/mongodb-mcp-server
+    tags: [database, nosql]
+    setup: Set MDB_MCP_CONNECTION_STRING.
+    config:
+      command: npx
+      args: ["-y", "mongodb-mcp-server"]
+      env:
+        MDB_MCP_CONNECTION_STRING: "${MDB_MCP_CONNECTION_STRING}"
+
+  - id: stripe
+    name: Stripe
+    description: Work with Stripe customers, payments, subscriptions and docs.
+    category: Developer tools
+    logo: https://cdn.simpleicons.org/stripe
+    homepage: https://docs.stripe.com/mcp
+    tags: [payments, oauth]
+    setup: Browser login on first run (OAuth).
+    config:
+      url: https://mcp.stripe.com
+
+  - id: vercel
+    name: Vercel
+    description: Search Vercel docs and manage projects and deployments.
+    category: Developer tools
+    logo: https://cdn.simpleicons.org/vercel
+    homepage: https://vercel.com/docs/mcp/vercel-mcp
+    tags: [deploy, hosting, oauth]
+    setup: Browser login on first run (OAuth).
+    config:
+      url: https://mcp.vercel.com
+
+  - id: cloudflare-docs
+    name: Cloudflare Docs
+    description: Up-to-date Cloudflare documentation search.
+    category: Developer tools
+    logo: https://cdn.simpleicons.org/cloudflare
+    homepage: https://github.com/cloudflare/mcp-server-cloudflare
+    tags: [docs, cloud]
+    config:
+      url: https://docs.mcp.cloudflare.com/mcp
+      oauth: false
+
+  - id: huggingface
+    name: Hugging Face
+    description: Search models, datasets, Spaces and papers on the Hugging Face Hub.
+    category: AI & reasoning
+    logo: https://cdn.simpleicons.org/huggingface
+    homepage: https://huggingface.co/settings/mcp
+    tags: [models, datasets, oauth]
+    setup: Browser login on first run (OAuth).
+    config:
+      url: https://huggingface.co/mcp
+
+  - id: chrome-devtools
+    name: Chrome DevTools
+    description: "Drive and debug a live Chrome: performance traces, network, console, screenshots."
+    category: Browser
+    logo: https://cdn.simpleicons.org/googlechrome
+    homepage: https://github.com/ChromeDevTools/chrome-devtools-mcp
+    tags: [browser, debugging, performance]
+    config:
+      command: npx
+      args: ["-y", "chrome-devtools-mcp@latest"]
