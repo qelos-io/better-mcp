@@ -1,80 +1,154 @@
-# @qelos/better-mcp
+<div align="center">
 
-A stdio MCP proxy that connects to one or more upstream MCP servers and exposes
-their **tools, resources, and prompts** through a single endpoint — with a
-configurable middleware pipeline (logging, per-tool flow tracing, redaction,
-oversize-response offloading, and your own `before` / `after` hooks) wrapping
-every call.
+# better-mcp
+
+**One MCP endpoint for all your MCP servers — with login, a marketplace, and a token diet.**
+
+[![npm](https://img.shields.io/npm/v/@qelos/better-mcp?color=cb3837&logo=npm)](https://www.npmjs.com/package/@qelos/better-mcp)
+[![node](https://img.shields.io/node/v/@qelos/better-mcp)](https://nodejs.org)
+[![Docker](https://img.shields.io/badge/ghcr.io-qelos--io%2Fbetter--mcp-2496ed?logo=docker&logoColor=white)](https://github.com/qelos-io/better-mcp/pkgs/container/better-mcp)
+[![license](https://img.shields.io/npm/l/@qelos/better-mcp)](https://github.com/qelos-io/better-mcp/blob/main/LICENSE)
+
+</div>
+
+better-mcp sits between your AI client (Claude Code, Claude Desktop, Cursor,
+VS Code…) and your MCP servers. You configure **one** server in the client;
+better-mcp connects to all the others — local (stdio) or remote (HTTP) — and
+exposes their tools, resources and prompts through a single endpoint, wrapped in
+a middleware pipeline that cuts token usage and keeps secrets out of the model.
 
 ```
-┌──────────┐  stdio   ┌────────────┐  stdio   ┌──────────────────┐
-│  Client  │ ───────▶ │ better-mcp │ ───────▶ │ fs MCP server    │
-│ (Claude, │          │ middleware │          ├──────────────────┤
-│  Cursor, │          │  pipeline  │ ───────▶ │ github MCP server│
-│  etc.)   │          └────────────┘          ├──────────────────┤
-└──────────┘                                  │ …more upstreams  │
-                                              └──────────────────┘
+┌──────────┐  stdio / HTTP  ┌────────────┐  stdio   ┌──────────────────┐
+│  Client  │ ─────────────▶ │ better-mcp │ ───────▶ │ filesystem       │
+│ (Claude, │                │ middleware │  HTTP    ├──────────────────┤
+│  Cursor, │ ◀───────────── │  + manager │ ───────▶ │ Linear (OAuth)   │
+│  etc.)   │  list_changed  └────────────┘          ├──────────────────┤
+└──────────┘                                         │ …more upstreams  │
+                                                     └──────────────────┘
 ```
+
+## Why
+
+- **Log in once.** Remote servers that need OAuth (Linear, Notion, ClickUp,
+  Sentry…) open a browser login, just like Claude Code. The login is saved and
+  shared by every client and session that uses your config.
+- **Manage from the chat.** Ask your agent to run `manage_mcps` and a local app
+  opens: see what's connected, log in, and install, disable or remove servers
+  from a **marketplace** — no restart, no JSON editing.
+- **Spend fewer tokens.** Slim `tools/list`, compact JSON, strip ANSI noise,
+  de-duplicate repeated responses, and offload oversize output to disk with a
+  short pointer.
+- **Keep secrets out.** Redact fields by name in both requests and responses.
+- **See everything.** Per-tool JSONL traces of the full request → upstream →
+  response flow, plus your own `before` / `after` hooks.
+- **Run it anywhere.** `npx`, Docker, or expose it over Streamable HTTP for
+  teams.
+
+## Quick start
+
+1. Create an `mcp.json` (same shape as Cursor / Claude Desktop):
+
+   ```json
+   {
+     "mcpServers": {
+       "filesystem": {
+         "command": "npx",
+         "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/root"]
+       },
+       "linear": { "url": "https://mcp.linear.app/mcp" }
+     }
+   }
+   ```
+
+2. Point your client at better-mcp instead of at each server.
+
+   **Claude Code**
+
+   ```bash
+   claude mcp add better-mcp -- npx -y @qelos/better-mcp -c /abs/path/to/mcp.json
+   ```
+
+   **Claude Desktop / Cursor / VS Code** (`mcpServers` in the client's config)
+
+   ```json
+   {
+     "mcpServers": {
+       "better-mcp": {
+         "command": "npx",
+         "args": ["-y", "@qelos/better-mcp", "-c", "/abs/path/to/mcp.json"]
+       }
+     }
+   }
+   ```
+
+3. In your client, ask: *"open manage_mcps"* — log in to `linear`, or browse the
+   [marketplace](https://github.com/qelos-io/better-mcp/tree/main/marketplace)
+   and install more servers with one click.
+
+Tools are exposed as `<server>__<tool>` (e.g. `filesystem__read_file`) so
+servers never collide.
 
 ## Install
 
-You can run `better-mcp` two ways. Pick whichever fits your host config.
-
 ### Option A — npm
 
+Requires Node.js 18 or newer.
+
 ```bash
-# One-shot, no install
-npx -y @qelos/better-mcp
+# Run without installing (recommended for MCP clients)
+npx -y @qelos/better-mcp -c /abs/path/to/mcp.json
 
 # Or install globally
 npm install -g @qelos/better-mcp
-better-mcp
+better-mcp -c ./mcp.json
 ```
 
-Wire it into Claude Desktop / Cursor:
+### Option B — Docker
 
-```json
-{
-  "mcpServers": {
-    "proxy": {
-      "command": "npx",
-      "args": ["-y", "@qelos/better-mcp", "-c", "/abs/path/to/mcp.json"]
-    }
-  }
-}
-```
-
-### Option B — Docker (GHCR)
-
-The image is published to GitHub Container Registry as a public package:
+The image is published to GitHub Container Registry:
 
 ```bash
-docker pull ghcr.io/qelos-io/better-mcp:main
+docker pull ghcr.io/qelos-io/better-mcp:latest
 ```
-
-Run it, mounting your `mcp.json` so the proxy can find it at `/app/mcp.json`
-(the default discovery path inside the container). If you use offload, also
-mount a writable directory and point `middleware.offload.dir` at it.
 
 ```bash
 docker run --rm -i \
-  -v "$PWD/mcp.json:/app/mcp.json:ro" \
-  -v "$PWD/exports:/exports" \
-  ghcr.io/qelos-io/better-mcp:main
+  -v "$PWD/mcp.json:/app/mcp.json" \
+  -v better-mcp-data:/data \
+  -p 127.0.0.1:33419:33419 \
+  -p 127.0.0.1:33418:33418 \
+  ghcr.io/qelos-io/better-mcp:latest
 ```
+
+| Flag | Why |
+|------|-----|
+| `-i` | The proxy speaks MCP over stdio (no `-t`). |
+| `-v "$PWD/mcp.json:/app/mcp.json"` | Your config. **Mount it read-write** (no `:ro`) so the management app can install, remove and disable servers and keep logins in it. |
+| `-p 127.0.0.1:33419:33419` | The **management app** (`manage_mcps`). Without this port the app's link won't open from your browser. |
+| `-p 127.0.0.1:33418:33418` | The **OAuth callback**. Remote-server logins redirect your browser to `http://localhost:33418/callback`. |
+| `-v better-mcp-data:/data` | Optional. Persists OAuth state when you use `"authStorage": "home"`. |
+
+Publish the ports on `127.0.0.1` as shown — the app is protected by a random
+URL token, but it can install programs, so don't expose it to your network.
+Inside the container better-mcp binds `0.0.0.0` (via `BETTER_MCP_MANAGE_HOST`,
+`BETTER_MCP_MANAGE_PORT` and `BETTER_MCP_CALLBACK_HOST`) so the published ports
+reach it. A browser can't be launched from inside a container, so
+`manage_mcps` returns the app URL in its reply — click it. For logins, the
+app shows an **Open login page** link while a login is in progress.
 
 Wire it into a host:
 
 ```json
 {
   "mcpServers": {
-    "proxy": {
+    "better-mcp": {
       "command": "docker",
       "args": [
         "run", "--rm", "-i",
-        "-v", "/abs/path/to/mcp.json:/app/mcp.json:ro",
-        "-v", "/abs/path/to/exports:/exports",
-        "ghcr.io/qelos-io/better-mcp:main"
+        "-v", "/abs/path/to/mcp.json:/app/mcp.json",
+        "-p", "127.0.0.1:33419:33419",
+        "-p", "127.0.0.1:33418:33418",
+        "ghcr.io/qelos-io/better-mcp:latest"
       ]
     }
   }
@@ -83,12 +157,17 @@ Wire it into a host:
 
 Notes for Docker:
 
-- Use `-i` (no `-t`) — the proxy speaks MCP over stdio.
-- Any upstream MCP servers listed in `mcp.json` need to be runnable **inside
-the container**. The image has `node` and `npx`, so `npx -y @modelcontextprotocol/server-`*
-works out of the box. If an upstream needs Python, Docker-in-Docker, or other
-toolchains, build a derived image.
-- For per-server secrets, pass them through with `-e GITHUB_PERSONAL_ACCESS_TOKEN=…`.
+- Upstream servers in `mcp.json` must be runnable **inside the container**. The
+  image has `node` and `npx`; servers that need Python (`uvx`), a browser, or
+  host paths require a derived image or a remote (`url`) server.
+- Pass per-server secrets with `-e GITHUB_PERSONAL_ACCESS_TOKEN=…` and reference
+  them as `${GITHUB_PERSONAL_ACCESS_TOKEN}` in `mcp.json`.
+- To keep the config in a directory instead of a single file, mount the
+  directory and pass `-c`: `-v "$PWD/config:/config" … -c /config/mcp.json`.
+- For offload output, mount a writable volume and set `middleware.offload.dir`
+  to it (e.g. `/exports`).
+- Different ports? Set `-e BETTER_MCP_MANAGE_PORT=…` and
+  `"oauth": { "callbackPort": … }` per server, and publish those instead.
 
 ### Option C — Build from source
 
@@ -97,7 +176,7 @@ git clone https://github.com/qelos-io/better-mcp.git
 cd better-mcp
 npm install
 npm run build
-node dist/index.js
+node dist/index.js -c ./mcp.json
 ```
 
 ## Run
@@ -133,9 +212,11 @@ In practice: drop your `mcp.json` next to `package.json` (or mount it at
 
 ## Popular MCP servers
 
+Browse the [marketplace](https://github.com/qelos-io/better-mcp/tree/main/marketplace) (registry: [`marketplace/servers.yaml`](https://github.com/qelos-io/better-mcp/blob/main/marketplace/servers.yaml) — contributions welcome) for one-click installs.
+
 Copy-paste configs for filesystem, GitHub, Postgres, Brave Search, Playwright,
-Context7, memory, and more — plus a ready-made `[examples/mcp.popular.json](examples/mcp.popular.json)`.
-See **[docs/popular-mcps.md](docs/popular-mcps.md)**.
+Context7, memory, and more — plus a ready-made `[examples/mcp.popular.json](https://github.com/qelos-io/better-mcp/blob/main/examples/mcp.popular.json)`.
+See **[docs/popular-mcps.md](https://github.com/qelos-io/better-mcp/blob/main/docs/popular-mcps.md)**.
 
 ## Config
 
@@ -242,6 +323,88 @@ CLI flags:
 - `--offload-resources` — also offload `resources/read` responses (same as
 setting `middleware.offload.includeResources: true`, or
 `MCP_PROXY_OFFLOAD_RESOURCES=1`).
+
+### OAuth login for remote (HTTP) servers
+
+Remote upstreams (`"url": ...`) that require authentication work like they do
+in Claude Code: when you start a login (the `authenticate` tool or the
+management app, below), better-mcp opens your browser to the server's login
+page, and the provider redirects back to
+`http://localhost:33418/callback`. Tokens and the dynamically registered
+client are saved (see below) and refreshed automatically, so later starts need
+no login. Startup never opens a browser by itself: servers that need a login
+show as "needs login" until you start one.
+
+```json
+{
+  "mcpServers": {
+    "linear": { "url": "https://mcp.linear.app/mcp" },
+    "custom": {
+      "url": "https://example.com/mcp",
+      "oauth": { "clientId": "...", "scopes": ["read"], "callbackPort": 40000 }
+    },
+    "static-token": {
+      "url": "https://example.com/mcp",
+      "headers": { "Authorization": "Bearer ${TOKEN}" }
+    }
+  }
+}
+```
+
+OAuth is on by default for `url` servers unless you set an `Authorization`
+header; `"oauth": false` turns it off. If the callback port is taken, set
+`oauth.callbackPort`. Under Docker, publish the callback port (see
+[Option B](#option-b--docker)); the app shows an **Open login page** link when no
+browser can be launched.
+
+#### Where logins are stored
+
+By default logins live **in your `mcp.json`**, under a top-level `auth` key
+next to `mcpServers`, so every client, session and container that uses the file
+shares one login:
+
+```json
+{
+  "mcpServers": { "linear": { "url": "https://mcp.linear.app/mcp" } },
+  "auth": { "linear-1a2b3c4d": { "clientInformation": { "...": "..." }, "tokens": { "...": "..." } } }
+}
+```
+
+better-mcp manages `auth` itself — don't edit it by hand. It contains access and
+refresh tokens, so **don't commit that file** (or set `"authStorage": "home"`
+to keep logins in `~/.better-mcp/auth/` instead — `/data/auth` in Docker, see
+`BETTER_MCP_HOME`). Inline `MCP_PROXY_CONFIG` configs always use the home
+directory.
+
+### Management app (`manage_mcps`, `authenticate`)
+
+better-mcp adds two tools of its own (they are not namespaced):
+
+- **`manage_mcps`** opens the management app in your browser and returns its URL
+  and each server's status. The app lists every server (connected, needs login,
+  error, disabled) with Log in / Reconnect / Disable / Remove buttons, and has a
+  **Marketplace** tab with one-click Install (you can edit the config, e.g. paths
+  and secrets, before saving).
+- **`authenticate`** starts the browser login for one server (`server`) or for
+  every server that needs it.
+
+Installing, removing, enabling and disabling take effect immediately: better-mcp
+rewrites `mcp.json` (only `mcpServers`; `${VAR}` placeholders are preserved),
+reconnects just that server, and sends `tools/list_changed` so the client
+refreshes without a restart. If the config was passed inline via
+`MCP_PROXY_CONFIG`, changes last only until restart.
+
+The app listens on `127.0.0.1` only, behind an unguessable URL token. The
+marketplace catalog is fetched from this repo's `docs/marketplace/servers.json`
+(falling back to a bundled copy offline), so new contributions show up without a
+release. Only install servers you trust: an entry runs a local command.
+
+```json
+{ "manage": { "port": 33419, "catalogUrl": false, "enabled": true } }
+```
+
+`port` pins the app's port (default: a free one), `catalogUrl: false` stays
+offline, and `enabled: false` removes both tools and the app.
 
 ## Middleware
 
@@ -638,6 +801,8 @@ to avoid this.
 
 - Logs go to **stderr** — stdout is reserved for the MCP protocol.
 - A server that fails to start is logged and skipped; the rest still come up.
+- Servers that need a browser login show as "needs login" until you run
+  `authenticate` (or use the management app); startup never opens a browser.
 - `SIGINT` / `SIGTERM` closes every upstream cleanly before exit.
 
 ## Publishing
@@ -646,7 +811,7 @@ to avoid this.
 
 ```bash
 npm version <patch|minor|major>      # bumps + tags + commits
-npm publish --access public           # public scoped package
+npm publish --access public           # runs build + tests first (prepublishOnly)
 git push --follow-tags
 ```
 
@@ -657,7 +822,7 @@ git push --follow-tags
 
 Every push to `main` and every `v*.*.*` tag triggers
 `.github/workflows/docker-publish.yml`, which builds a multi-arch image
-(`linux/amd64` + `linux/arm64`) and pushes to `ghcr.io/qelos/better-mcp`.
+(`linux/amd64` + `linux/arm64`) and pushes to `ghcr.io/qelos-io/better-mcp`.
 Tags pushed:
 
 - branch pushes  → `:main`, `:sha-<short>`

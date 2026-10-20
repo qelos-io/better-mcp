@@ -1,7 +1,7 @@
 {
   "name": "@qelos/better-mcp",
-  "version": "0.2.0",
-  "description": "Stdio MCP proxy: fans out to multiple upstream MCP servers and wraps every call in a middleware pipeline (logging, redaction, oversize-response offloading, and user hooks).",
+  "version": "0.3.0",
+  "description": "MCP gateway/proxy: fan out to many MCP servers (stdio or HTTP with OAuth login) behind one endpoint, with a middleware pipeline, a built-in management app and a community marketplace.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -9,36 +9,44 @@
   },
   "files": [
     "dist",
+    "docs/marketplace/servers.json",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "npm run clean && tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "node --import tsx --test 'src/**/*.test.ts'",
     "test:build": "npm run build && npm test",
-    "prepublishOnly": "npm run build",
-    "marketplace:build": "tsx src/marketplace/build.ts"
+    "prepublishOnly": "npm run build && npm test",
+    "marketplace:build": "tsx src/marketplace/build.ts",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "keywords": [
-    "mcp",
-    "model-context-protocol",
-    "proxy",
-    "middleware",
-    "stdio",
     "claude",
-    "cursor"
+    "cursor",
+    "gateway",
+    "http",
+    "marketplace",
+    "mcp",
+    "middleware",
+    "model-context-protocol",
+    "oauth",
+    "proxy",
+    "stdio",
+    "streamable-http",
+    "token-reduction"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/qelos/better-mcp.git"
+    "url": "git+https://github.com/qelos-io/better-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/qelos/better-mcp/issues"
+    "url": "https://github.com/qelos-io/better-mcp/issues"
   },
-  "homepage": "https://github.com/qelos/better-mcp#readme",
+  "homepage": "https://github.com/qelos-io/better-mcp#readme",
   "publishConfig": {
     "access": "public"
   },
