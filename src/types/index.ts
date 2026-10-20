@@ -20,6 +20,36 @@ export interface McpServerConfig {
   url?: string;
   /** Extra HTTP headers for remote upstreams (e.g. Authorization). */
   headers?: Record<string, string>;
+  /**
+   * Interactive OAuth login for remote upstreams. When a server requires
+   * authentication, a browser opens to its login page and redirects back to
+   * `http://localhost:<callbackPort>/callback`; tokens are cached under
+   * `~/.better-mcp/auth`. Default: enabled unless an `Authorization` header is
+   * set in `headers`. `false` disables it.
+   */
+  oauth?: boolean | OAuthConfig;
+}
+
+export interface OAuthConfig {
+  /** Pre-registered OAuth client id. Omit to use dynamic client registration. */
+  clientId?: string;
+  /** Client secret for a pre-registered confidential client. */
+  clientSecret?: string;
+  /** Scopes to request. Defaults to whatever the server advertises. */
+  scopes?: string[];
+  /** Loopback port for the login redirect. Default: 33418. */
+  callbackPort?: number;
+}
+
+export interface ManageConfig {
+  /** Fixed port for the management app. Default: a free port. */
+  port?: number;
+  /** Bind address. Default 127.0.0.1; use 0.0.0.0 only inside a container whose published port is loopback-bound. */
+  host?: string;
+  /** Marketplace catalog JSON URL, or `false` to stay offline. Default: this repo's catalog on GitHub. */
+  catalogUrl?: string | false;
+  /** Set false to remove the `manage_mcps` / `authenticate` tools and the app. Default: true. */
+  enabled?: boolean;
 }
 
 export interface ListenAuthConfig {
@@ -278,6 +308,15 @@ export interface ProxyConfig {
   middleware?: MiddlewareConfig;
   /** Prefix each upstream tool/resource/prompt with `<serverName>__`. Default true. */
   namespace?: boolean;
+  /**
+   * Where OAuth logins are kept. `"config"` (default for file configs) stores
+   * client registration + tokens in this file under a top-level `auth` key, so
+   * every client and session using the file shares one login. `"home"` keeps
+   * them in `~/.better-mcp/auth` instead (use this if the file is committed).
+   */
+  authStorage?: "config" | "home";
+  /** Management app (opened by the `manage_mcps` tool). */
+  manage?: ManageConfig;
   /** Expose the proxy over HTTP (Streamable HTTP / SSE) on the network. */
   listen?: ListenConfig;
 }

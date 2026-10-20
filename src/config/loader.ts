@@ -10,6 +10,10 @@ export interface LoadResult {
   baseDir: string;
   /** Where the config was loaded from, for logging. */
   source: string;
+  /** Config file path when loaded from a file (undefined for inline JSON); the manage UI writes back here. */
+  configPath?: string;
+  /** `mcpServers` exactly as written in the file, before `${VAR}` expansion. */
+  rawServers: Record<string, McpServerConfig>;
 }
 
 interface LoadOptions {
@@ -85,7 +89,7 @@ function envTrue(name: string): boolean {
   return ["1", "true", "yes", "on"].includes(v.toLowerCase());
 }
 
-function validateServer(name: string, server: unknown): McpServerConfig {
+export function validateServer(name: string, server: unknown): McpServerConfig {
   if (!server || typeof server !== "object") {
     throw new Error(`mcpServers.${name} must be an object.`);
   }
@@ -135,6 +139,9 @@ function validate(raw: unknown): ProxyConfig {
   for (const [name, server] of Object.entries(cfg.mcpServers)) {
     mcpServers[name] = validateServer(name, server);
   }
+  if (cfg.authStorage !== undefined && cfg.authStorage !== "config" && cfg.authStorage !== "home") {
+    throw new Error('"authStorage" must be "config" or "home".');
+  }
   let listen: ListenConfig | undefined;
   if (cfg.listen !== undefined) {
     listen = validateListen(cfg.listen);
@@ -144,6 +151,8 @@ function validate(raw: unknown): ProxyConfig {
     middleware: cfg.middleware,
     namespace: cfg.namespace ?? true,
     listen,
+    manage: cfg.manage,
+    authStorage: cfg.authStorage,
   };
 }
 
@@ -219,6 +228,10 @@ function defaultSearchDirs(entryDir: string | undefined): string[] {
   return dirs;
 }
 
+function rawServersOf(parsed: unknown): Record<string, McpServerConfig> {
+  return structuredClone((parsed as { mcpServers: Record<string, McpServerConfig> }).mcpServers);
+}
+
 function finalizeConfig(raw: unknown, cli: CliFlags): ProxyConfig {
   const interpolated = interpolateEnvVars(raw);
   const cfg = validate(interpolated);
@@ -259,7 +272,7 @@ export async function loadConfig(opts: LoadOptions = {}): Promise<LoadResult> {
     const expanded = expandTilde(cli.configPath);
     const abs = isAbsolute(expanded) ? expanded : resolve(process.cwd(), expanded);
     const parsed = await readJson(abs);
-    return { config: apply(finalizeConfig(parsed, cli)), baseDir: dirname(abs), source: abs };
+    return { config: apply(finalizeConfig(parsed, cli)), baseDir: dirname(abs), source: abs, configPath: abs, rawServers: rawServersOf(parsed) };
   }
 
   // 2. Env var (inline JSON or a path)
@@ -272,12 +285,13 @@ export async function loadConfig(opts: LoadOptions = {}): Promise<LoadResult> {
         config: apply(finalizeConfig(parsed, cli)),
         baseDir: process.cwd(),
         source: "MCP_PROXY_CONFIG (inline)",
+        rawServers: rawServersOf(parsed),
       };
     }
     const expanded = expandTilde(trimmed);
     const abs = isAbsolute(expanded) ? expanded : resolve(process.cwd(), expanded);
     const parsed = await readJson(abs);
-    return { config: apply(finalizeConfig(parsed, cli)), baseDir: dirname(abs), source: abs };
+    return { config: apply(finalizeConfig(parsed, cli)), baseDir: dirname(abs), source: abs, configPath: abs, rawServers: rawServersOf(parsed) };
   }
 
   // 3 + 4. Default discovery
@@ -290,6 +304,8 @@ export async function loadConfig(opts: LoadOptions = {}): Promise<LoadResult> {
         config: apply(finalizeConfig(parsed, cli)),
         baseDir: dirname(candidate),
         source: candidate,
+        configPath: candidate,
+        rawServers: rawServersOf(parsed),
       };
     }
   }
