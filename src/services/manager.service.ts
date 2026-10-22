@@ -236,7 +236,7 @@ export class UpstreamManager {
         e.status = "needs_auth";
       } else {
         e.status = "error";
-        e.error = err instanceof Error ? err.message : String(err);
+        e.error = describeError(err);
         process.stderr.write(`[better-mcp] ${name}: failed to connect: ${e.error}\n`);
       }
     }
@@ -260,4 +260,12 @@ export class UpstreamManager {
       }
     }
   }
+}
+
+/** Node's fetch reports every network failure as "fetch failed"; the real reason is in `cause`. */
+export function describeError(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  const cause = err.cause as { code?: string; message?: string } | undefined;
+  const detail = cause?.code ?? cause?.message;
+  return detail && !err.message.includes(detail) ? `${err.message} (${detail})` : err.message;
 }

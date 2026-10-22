@@ -284,6 +284,11 @@ export class BetterMcpOAuthProvider implements OAuthClientProvider {
     return v;
   }
 
+  /** Accept the resource the server advertises even when its path differs from the configured URL (e.g. `/sse` vs `/mcp`). */
+  async validateResourceURL(_serverUrl: string | URL, resource?: string): Promise<URL | undefined> {
+    return resource ? new URL(resource) : undefined;
+  }
+
   async invalidateCredentials(scope: "all" | "client" | "tokens" | "verifier" | "discovery"): Promise<void> {
     if (scope === "discovery") return;
     await this.opts.store.clear(scope);

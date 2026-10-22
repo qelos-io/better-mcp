@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { McpServerConfig } from "../../types/index.js";
-import { UpstreamManager } from "../manager.service.js";
+import { UpstreamManager, describeError } from "../manager.service.js";
 import { NeedsAuthError, type UpstreamServer } from "../upstream.service.js";
 
 function fakeServer(name: string, tools = 2): UpstreamServer & { closed: boolean } {
@@ -194,4 +194,11 @@ test("login: loginUrl is exposed while authenticating and cleared afterwards", a
   await p;
   assert.equal(manager.list()[0].status, "connected");
   assert.equal(manager.list()[0].loginUrl, undefined);
+});
+
+test("describeError surfaces the network cause behind 'fetch failed'", () => {
+  const err = new TypeError("fetch failed", { cause: { code: "ECONNREFUSED" } });
+  assert.equal(describeError(err), "fetch failed (ECONNREFUSED)");
+  assert.equal(describeError(new Error("boom")), "boom");
+  assert.equal(describeError("x"), "x");
 });

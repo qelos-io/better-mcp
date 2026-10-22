@@ -239,3 +239,14 @@ import { credentialsKey } from "../oauth.js";
 test("credentialsKey: file name is the key plus .json", () => {
   assert.equal(`${credentialsKey("s", "https://a")}.json`, credentialsFileName("s", "https://a"));
 });
+
+test("provider: validateResourceURL accepts the advertised resource even if its path differs", async () => {
+  const { provider, hub } = await makeProvider();
+  try {
+    const url = await provider.validateResourceURL("https://x.example/sse", "https://x.example/mcp");
+    assert.equal(url?.href, "https://x.example/mcp");
+    assert.equal(await provider.validateResourceURL("https://x.example/sse", undefined), undefined);
+  } finally {
+    await hub.close();
+  }
+});
