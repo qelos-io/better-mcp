@@ -265,7 +265,7 @@ export class UpstreamManager {
 /** Node's fetch reports every network failure as "fetch failed"; the real reason is in `cause`. */
 export function describeError(err: unknown): string {
   if (!(err instanceof Error)) return String(err);
-  const cause = err.cause as { code?: string; message?: string } | undefined;
-  const detail = cause?.code ?? cause?.message;
+  const cause = err.cause as { code?: string; message?: string; hostname?: string } | undefined;
+  const detail = cause?.code ? (cause.hostname ? `${cause.code} ${cause.hostname}` : cause.code) : cause?.message;
   return detail && !err.message.includes(detail) ? `${err.message} (${detail})` : err.message;
 }

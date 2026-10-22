@@ -199,6 +199,8 @@ test("login: loginUrl is exposed while authenticating and cleared afterwards", a
 test("describeError surfaces the network cause behind 'fetch failed'", () => {
   const err = new TypeError("fetch failed", { cause: { code: "ECONNREFUSED" } });
   assert.equal(describeError(err), "fetch failed (ECONNREFUSED)");
+  const dns = new TypeError("fetch failed", { cause: { code: "ENOTFOUND", hostname: "x.example" } });
+  assert.equal(describeError(dns), "fetch failed (ENOTFOUND x.example)");
   assert.equal(describeError(new Error("boom")), "boom");
   assert.equal(describeError("x"), "x");
 });

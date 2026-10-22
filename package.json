@@ -1,6 +1,6 @@
 {
   "name": "@qelos/better-mcp",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "MCP gateway/proxy: fan out to many MCP servers (stdio or HTTP with OAuth login) behind one endpoint, with a middleware pipeline, a built-in management app and a community marketplace.",
   "type": "module",
   "main": "dist/index.js",
