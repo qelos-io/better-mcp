@@ -24,6 +24,8 @@ export interface UpstreamTool {
   name: string;
   description?: string;
   inputSchema: unknown;
+  /** MCP tool hints (readOnlyHint, destructiveHint, …), when the server sends them. */
+  annotations?: Record<string, unknown>;
 }
 
 export interface UpstreamResource {
@@ -81,6 +83,7 @@ export class UpstreamServer {
           name: t.name,
           description: t.description,
           inputSchema: t.inputSchema,
+          annotations: t.annotations as Record<string, unknown> | undefined,
         }));
       } catch (err) {
         warn(this.name, "listTools failed", err);

@@ -2,6 +2,7 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { UpstreamManager } from "../services/manager.service.js";
+import type { RunToolResult } from "./api-types.js";
 import type { Catalog } from "./catalog.js";
 import { readAllSettings } from "./settings-schema.js";
 import type { SettingsStore } from "./settings-store.js";
@@ -10,7 +11,7 @@ import { UI_MISSING_HTML, readStatic } from "./static.js";
 export interface ManageDeps {
   manager: Pick<
     UpstreamManager,
-    "list" | "add" | "remove" | "setEnabled" | "listTools" | "setToolsEnabled" | "reconnect" | "login" | "has"
+    "list" | "add" | "remove" | "setEnabled" | "listTools" | "toolDetail" | "setToolsEnabled" | "reconnect" | "login" | "has"
   >;
   catalog: () => Promise<Catalog>;
   /** False when the config can't be written back (inline JSON). */
@@ -25,6 +26,8 @@ export interface ManageDeps {
   settings: SettingsStore;
   /** Re-reads the saved settings into the running proxy. Omit when changes need a restart. */
   applySettings?: () => Promise<void>;
+  /** Run a tool through the middleware pipeline; absent when running tools isn't available. */
+  runTool?: (server: string, tool: string, args: Record<string, unknown>) => Promise<RunToolResult>;
 }
 
 const MAX_BODY = 1_000_000;
@@ -165,6 +168,20 @@ export class ManageServer {
       if (typeof body.name !== "string") throw new Error("name is required");
       await manager.add(body.name, body.config);
       return [201, { ok: true }];
+    }
+    const one = /^servers\/([^/]+)\/tools\/([^/]+)(\/call)?$/.exec(api);
+    if (one) {
+      const name = decodeURIComponent(one[1]);
+      const tool = decodeURIComponent(one[2]);
+      if (!manager.has(name)) throw new Error(`unknown server "${name}"`);
+      if (method === "GET" && !one[3]) return [200, manager.toolDetail(name, tool)];
+      if (method === "POST" && one[3]) {
+        if (!this.deps.runTool) throw new Error("running tools is not available");
+        const body = (await readJson(req)) as { arguments?: unknown };
+        const args = body.arguments ?? {};
+        if (!args || typeof args !== "object" || Array.isArray(args)) throw new Error("arguments must be an object");
+        return [200, await this.deps.runTool(name, tool, args as Record<string, unknown>)];
+      }
     }
     const t = /^servers\/([^/]+)\/tools$/.exec(api);
     if (t) {

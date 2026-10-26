@@ -1,4 +1,4 @@
-import type { ServerStatus, ServerView, ToolView } from "../manage/api-types.js";
+import type { ServerStatus, ServerView, ToolDetail, ToolView } from "../manage/api-types.js";
 import { interpolateEnvVars } from "../lib/env.js";
 import { validateServer } from "../config/loader.js";
 import type { McpServerConfig } from "../types/index.js";
@@ -95,6 +95,17 @@ export class UpstreamManager {
     const e = this.require(name);
     const off = new Set(e.raw.disabledTools ?? []);
     return (e.server?.allTools ?? []).map((t) => ({ name: t.name, description: t.description, enabled: !off.has(t.name) }));
+  }
+
+  /** The live connection to a server, for calling its tools. Undefined unless connected. */
+  connectedServer(name: string): UpstreamServer | undefined {
+    return this.require(name).server;
+  }
+
+  toolDetail(name: string, tool: string): ToolDetail {
+    const t = this.require(name).server?.allTools.find((x) => x.name === tool);
+    if (!t) throw new Error(`unknown tool "${tool}" on "${name}"`);
+    return { name: t.name, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations };
   }
 
   /** Enable or disable tools by their original names; persisted, applied live. */

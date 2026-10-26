@@ -4,6 +4,7 @@ import { api, serverPath } from "../api";
 import { filterTools, toolCounts, withToolsSet, type ToolFilter } from "../lib/tools";
 import { toastError } from "../toast";
 import { Icon } from "./Icon";
+import { ToolRunner } from "./ToolRunner";
 
 const PAGE = 100;
 
@@ -14,6 +15,7 @@ export function ToolsModal({ server, onClose, onChange }: { server: string; onCl
   const [q, setQ] = useState("");
   const [mode, setMode] = useState<ToolFilter>("all");
   const [limit, setLimit] = useState(PAGE);
+  const [running, setRunning] = useState<string | null>(null);
 
   useEffect(() => {
     ref.current?.showModal();
@@ -67,12 +69,13 @@ export function ToolsModal({ server, onClose, onChange }: { server: string; onCl
     <dialog ref={ref} class="wide tools-modal" onClose={onClose} aria-labelledby="tools-title">
       <header class="modal-head">
         <div>
-          <h2 id="tools-title">{server} tools</h2>
-          <p class="muted">{tools ? `${counts.enabled} of ${counts.all} enabled. Disabled tools are hidden from your AI clients.` : "Loading…"}</p>
+          <h2 id="tools-title">{running ? `Run a tool on ${server}` : `${server} tools`}</h2>
+          <p class="muted">{running ? "Try a tool and compare what the server returns with what your client receives." : tools ? `${counts.enabled} of ${counts.all} enabled. Disabled tools are hidden from your AI clients.` : "Loading…"}</p>
         </div>
         <button class="icon-btn" aria-label="Close" onClick={() => ref.current?.close()}><Icon name="x" /></button>
       </header>
-      <div class="modal-tools">
+      {running && <div class="modal-body"><ToolRunner server={server} tool={running} onBack={() => setRunning(null)} /></div>}
+      <div class="modal-tools" hidden={!!running}>
         <div class="search">
           <Icon name="search" size={16} />
           <input ref={search} type="search" placeholder="Search tools   ( / )" aria-label="Search tools" value={q} onInput={(e) => setQ(e.currentTarget.value)} />
@@ -87,7 +90,7 @@ export function ToolsModal({ server, onClose, onChange }: { server: string; onCl
           <button class="btn" disabled={!toDisable.length} onClick={() => set(toDisable, false)}>Disable {toDisable.length || ""}</button>
         </div>
       </div>
-      <div class="tool-list" aria-busy={!tools}>
+      <div class="tool-list" aria-busy={!tools} hidden={!!running}>
         {!tools ? (
           [0, 1, 2, 3, 4].map((i) => <div class="tool-row skeleton" key={i}><div class="bone w40" /></div>)
         ) : shown.length === 0 ? (
@@ -103,6 +106,7 @@ export function ToolsModal({ server, onClose, onChange }: { server: string; onCl
                 <span class="tn">{t.name}</span>
                 {t.description && <span class="td" title={t.description}>{t.description}</span>}
               </span>
+              <button class="btn run-btn" aria-label={`Run ${t.name}`} onClick={(e) => { e.preventDefault(); setRunning(t.name); }}><Icon name="play" size={13} /> Run</button>
             </label>
           ))
         )}
@@ -111,7 +115,7 @@ export function ToolsModal({ server, onClose, onChange }: { server: string; onCl
         )}
       </div>
       <footer class="modal-foot">
-        <span class="muted">Changes save immediately.</span>
+        <span class="muted">{running ? "Runs go through your live middleware settings." : "Changes save immediately."}</span>
         <button class="btn primary" onClick={() => ref.current?.close()}>Done</button>
       </footer>
     </dialog>

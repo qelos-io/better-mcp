@@ -13,6 +13,9 @@ const PATHS = {
   alert: "M12 9v4m0 4h.01M10.3 4.2 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z",
   external: "M14 4h6v6m0-6-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
   plus: "M12 5v14M5 12h14",
+  play: "M8 5.5v13a.8.8 0 0 0 1.2.7l10.4-6.5a.8.8 0 0 0 0-1.4L9.2 4.8A.8.8 0 0 0 8 5.5Z",
+  back: "m15 6-6 6 6 6",
+  copy: "M9 9h10v11H9V9Zm-4 6V4h10",
 } as const;
 
 export type IconName = keyof typeof PATHS;

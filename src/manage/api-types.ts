@@ -49,3 +49,24 @@ export interface Catalog {
   entries: CatalogEntry[];
   source: "remote" | "bundled" | "none";
 }
+
+/** One tool with what is needed to call it. */
+export interface ToolDetail {
+  name: string;
+  description?: string;
+  inputSchema: unknown;
+  annotations?: Record<string, unknown>;
+}
+
+/** Outcome of running a tool from the management app. */
+export interface RunToolResult {
+  /** The tool's own response, exactly as the upstream server returned it. */
+  raw?: unknown;
+  /** What an MCP client would receive after the middleware pipeline. */
+  processed?: unknown;
+  durationMs: number;
+  /** The call itself failed (transport or protocol error), as opposed to a tool-reported `isError`. */
+  error?: string;
+  /** True when the pipeline changed the response. */
+  changed: boolean;
+}

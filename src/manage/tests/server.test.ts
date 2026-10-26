@@ -264,3 +264,36 @@ test("settings API: applies a saved patch live when the proxy can reload, and re
     await server.close();
   }
 });
+
+test("tool API: detail with schema, and run returns what the runner gives back; bad bodies are 400", async () => {
+  const manager = new UpstreamManager({ a: { command: "x" } }, { connect: async (n) => fake(n), save: async () => {} });
+  await manager.start();
+  const calls: unknown[] = [];
+  const server = new ManageServer({
+    manager,
+    persistent: true,
+    uiDir: "/x",
+    settings: { read: async () => ({}) },
+    runTool: async (s, t, args) => {
+      calls.push([s, t, args]);
+      return { raw: { a: 1 }, processed: { a: 1 }, durationMs: 3, changed: false };
+    },
+    catalog: async () => ({ entries: [], source: "none" }),
+  });
+  const url = await server.ensureStarted();
+  try {
+    const detail = (await (await fetch(url + "api/servers/a/tools/t0")).json()) as { name: string; inputSchema: unknown };
+    assert.equal(detail.name, "t0");
+    assert.deepEqual(detail.inputSchema, {});
+    assert.equal((await fetch(url + "api/servers/a/tools/nope")).status, 400);
+    const post = (body: unknown) => fetch(url + "api/servers/a/tools/t0/call", { method: "POST", headers: H, body: JSON.stringify(body) });
+    const ok = await post({ arguments: { q: 1 } });
+    assert.equal(ok.status, 200);
+    assert.deepEqual(await ok.json(), { raw: { a: 1 }, processed: { a: 1 }, durationMs: 3, changed: false });
+    assert.deepEqual(calls, [["a", "t0", { q: 1 }]]);
+    assert.equal((await post({ arguments: [] })).status, 400);
+    assert.equal((await fetch(url + "api/servers/a/tools/t0/call", { method: "POST", body: "{}" })).status, 403);
+  } finally {
+    await server.close();
+  }
+});

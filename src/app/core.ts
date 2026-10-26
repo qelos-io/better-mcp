@@ -12,6 +12,7 @@ import { ManageServer } from "../manage/server.js";
 import { fileSettingsStore, readOnlySettingsStore } from "../manage/settings-store.js";
 import { RuntimeSettings } from "../services/runtime.service.js";
 import { UpstreamManager } from "../services/manager.service.js";
+import { runTool } from "../services/run-tool.service.js";
 
 export interface Core extends LoadResult {
   manager: UpstreamManager;
@@ -68,6 +69,11 @@ export async function createCore(opts: { entryDir: string; forceManage?: boolean
           applySettings: async () => {
             const fresh = await loadConfig({ entryDir: opts.entryDir });
             await runtime.apply(fresh.config, fresh.baseDir);
+          },
+          runTool: (server, tool, args) => {
+            const upstream = manager.connectedServer(server);
+            if (!upstream) throw new Error(`"${server}" is not connected`);
+            return runTool({ pipeline: runtime.pipeline, server: upstream }, tool, args);
           },
           ...resolveManageOptions(manageCfg),
           catalog: () =>
