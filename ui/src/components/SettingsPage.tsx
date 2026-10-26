@@ -148,7 +148,7 @@ export function SettingsPage({ onSaved }: { onSaved: () => void }) {
       {groups.map((g) => (
         <div class="group" key={g}>
           <h2>{g}</h2>
-          <div class="list">
+          <div class="panel">
             {SECTIONS.filter((s) => s.group === g).map((s) => (
               <SectionBlock key={s.id} section={s} draft={drafts[s.id]} disabled={!loaded.writable} edited={s.id in patch} onChange={(d) => setDrafts({ ...drafts, [s.id]: d })} />
             ))}

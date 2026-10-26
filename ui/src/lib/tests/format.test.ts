@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { ServerView } from "../../../../src/manage/api-types.js";
-import { countsText, loginNotice, matchesFilter, stateLabel, summarize } from "../format.js";
+import { countsText, loginNotice, stateLabel, statusLabel, summarize } from "../format.js";
 
 const v = (o: Partial<ServerView> = {}): ServerView => ({
   name: "a", status: "connected", transport: "http", target: "t", tools: 3, toolsTotal: 3, resources: 0, prompts: 0, ...o,
@@ -35,9 +35,8 @@ test("loginNotice: distinguishes finishing, link available and starting", () => 
   assert.equal(loginNotice(v()), "Starting login…");
 });
 
-test("matchesFilter: case-insensitive over name and description", () => {
-  assert.equal(matchesFilter({ name: "List_Issues", description: "x" }, "issues"), true);
-  assert.equal(matchesFilter({ name: "a", description: "Delete repo" }, "DELETE"), true);
-  assert.equal(matchesFilter({ name: "a" }, "zzz"), false);
-  assert.equal(matchesFilter({ name: "a" }, ""), true);
+test("statusLabel: the state without counts; finishing sign-in wins", () => {
+  assert.equal(statusLabel(v()), "Connected");
+  assert.equal(statusLabel(v({ status: "authenticating", finishing: true })), "Finishing sign-in…");
+  assert.equal(statusLabel(v({ status: "needs_auth" })), "Needs login");
 });

@@ -31,6 +31,11 @@ export function countsText(s: ServerView): string {
   return bits.join(", ");
 }
 
+/** The status chip text: the state alone, since tool counts have their own button. */
+export function statusLabel(s: ServerView): string {
+  return s.finishing ? "Finishing sign-in…" : STATUS_LABEL[s.status] ?? s.status;
+}
+
 export function stateLabel(s: ServerView): string {
   const label = s.finishing ? "Finishing sign-in…" : STATUS_LABEL[s.status] ?? s.status;
   const counts = countsText(s);
@@ -40,8 +45,4 @@ export function stateLabel(s: ServerView): string {
 export function loginNotice(s: ServerView): string {
   if (s.finishing) return "Signed in. Connecting and loading tools, this can take a few seconds.";
   return s.loginUrl ? "Finish signing in in your browser. If no window opened, use the login page link." : "Starting login…";
-}
-
-export function matchesFilter(t: { name: string; description?: string }, q: string): boolean {
-  return !q || `${t.name} ${t.description ?? ""}`.toLowerCase().includes(q.toLowerCase());
 }

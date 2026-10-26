@@ -44,6 +44,27 @@ export function parsePairs(text: string, sep: "=" | ":"): { values: Record<strin
 
 const lines = (text: string) => text.split("\n").map((l) => l.trim()).filter(Boolean);
 
+/** An http(s) URL; `${VAR}` placeholders are allowed since they are expanded when connecting. */
+export function isValidUrl(raw: string): boolean {
+  const url = raw.trim();
+  if (/^\$\{[^}]+\}$/.test(url)) return true;
+  try {
+    const u = new URL(url.replace(/\$\{[^}]*\}/g, "x"));
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/** Keys the form edits. Everything else on a config (oauth, cwd, enabled, disabledTools…) is carried over untouched. */
+const FORM_KEYS = ["command", "args", "env", "url", "headers"] as const;
+
+export function mergeConfig(base: McpServerConfig | null | undefined, built: McpServerConfig): McpServerConfig {
+  const kept: Record<string, unknown> = { ...(base ?? {}) };
+  for (const k of FORM_KEYS) delete kept[k];
+  return { ...kept, ...built } as McpServerConfig;
+}
+
 export function buildConfig(form: ServerForm): { config?: McpServerConfig; errors: FormErrors } {
   const errors: FormErrors = {};
   const config: McpServerConfig = {};
@@ -56,13 +77,8 @@ export function buildConfig(form: ServerForm): { config?: McpServerConfig; error
     if (env.error) errors.env = env.error;
     else if (Object.keys(env.values).length) config.env = env.values;
   } else {
-    try {
-      const u = new URL(form.url.trim());
-      if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("scheme");
-      config.url = form.url.trim();
-    } catch {
-      errors.url = "Enter a full http(s) address, for example https://example.com/mcp.";
-    }
+    if (isValidUrl(form.url)) config.url = form.url.trim();
+    else errors.url = "Enter a full http(s) address, for example https://example.com/mcp.";
     const headers = parsePairs(form.headers, ":");
     if (headers.error) errors.headers = headers.error;
     else if (Object.keys(headers.values).length) config.headers = headers.values;

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildConfig, emptyForm, formFromConfig, parsePairs, validateName } from "../server-form.js";
+import { buildConfig, emptyForm, formFromConfig, isValidUrl, mergeConfig, parsePairs, validateName } from "../server-form.js";
 
 test("validateName: required, charset, no double underscore, unique", () => {
   assert.equal(validateName("github", ["a"]), null);
@@ -37,4 +37,30 @@ test("formFromConfig: round-trips through buildConfig", () => {
   const remote = { url: "https://a.example/mcp", headers: { Authorization: "Bearer ${TOKEN}" } };
   assert.deepEqual(buildConfig(formFromConfig("n", remote)).config, remote);
   assert.equal(formFromConfig("n", remote).kind, "remote");
+});
+
+test("isValidUrl: http(s) addresses and ${VAR} placeholders are accepted", () => {
+  assert.equal(isValidUrl("https://a.example/mcp"), true);
+  assert.equal(isValidUrl("${COMPOSIO_MCP_URL}"), true);
+  assert.equal(isValidUrl("https://${HOST}/mcp"), true);
+  assert.equal(isValidUrl("example.com"), false);
+  assert.equal(isValidUrl("ftp://a.b"), false);
+  assert.equal(isValidUrl(""), false);
+});
+
+test("mergeConfig: keeps fields the form does not edit and replaces the ones it does", () => {
+  const base = { url: "https://old/mcp", oauth: false as const, headers: { A: "1" }, cwd: "/x", disabledTools: ["t"] };
+  assert.deepEqual(mergeConfig(base, { command: "npx" }), { oauth: false, cwd: "/x", disabledTools: ["t"], command: "npx" });
+  assert.deepEqual(mergeConfig(base, { url: "https://new/mcp" }), { oauth: false, cwd: "/x", disabledTools: ["t"], url: "https://new/mcp" });
+  assert.deepEqual(mergeConfig(null, { command: "x" }), { command: "x" });
+});
+
+test("marketplace round trip: every bundled catalog entry survives form edit unchanged", async () => {
+  const { readFileSync } = await import("node:fs");
+  const entries = JSON.parse(readFileSync(new URL("../../../../docs/marketplace/servers.json", import.meta.url), "utf8")) as { id: string; config: import("../../../../src/types/index.js").McpServerConfig }[];
+  for (const e of entries) {
+    const built = buildConfig(formFromConfig(e.id, e.config));
+    assert.deepEqual(built.errors, {}, e.id);
+    assert.deepEqual(mergeConfig(e.config, built.config!), e.config, e.id);
+  }
 });

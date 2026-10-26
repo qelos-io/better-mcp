@@ -1,12 +1,13 @@
-import { useEffect, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 import type { ServerView } from "../../../src/manage/api-types";
 import { api, serverPath } from "../api";
 import { explainError } from "../lib/errors";
-import { loginNotice, stateLabel } from "../lib/format";
+import { loginNotice, statusLabel } from "../lib/format";
 import { toast, toastError } from "../toast";
-import { ToolsPanel } from "./ToolsPanel";
+import { Icon } from "./Icon";
+import { Menu } from "./Menu";
 
-function ActionButton(props: { label: string; run: () => Promise<unknown>; onDone: () => void; class?: string; done?: string }) {
+function ActionButton(props: { label: string; run: () => Promise<unknown>; onDone: () => void; class?: string }) {
   const [busy, setBusy] = useState(false);
   return (
     <button
@@ -17,7 +18,6 @@ function ActionButton(props: { label: string; run: () => Promise<unknown>; onDon
         setBusy(true);
         try {
           await props.run();
-          if (props.done) toast(props.done);
         } catch (e) {
           toastError(e);
         }
@@ -30,15 +30,8 @@ function ActionButton(props: { label: string; run: () => Promise<unknown>; onDon
   );
 }
 
-export function ServerRow({ server: s, onChange }: { server: ServerView; onChange: () => void }) {
-  const [armed, setArmed] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(false);
-  useEffect(() => {
-    if (!armed) return;
-    const t = setTimeout(() => setArmed(false), 4000);
-    return () => clearTimeout(t);
-  }, [armed]);
-
+export function ServerRow(props: { server: ServerView; onChange: () => void; onTools: (name: string) => void }) {
+  const { server: s, onChange } = props;
   const post = (sub: string) => () => api(serverPath(s.name, sub), "POST");
   const help = s.error ? explainError(s.error, s.transport) : null;
   const http = s.transport === "http";
@@ -46,56 +39,59 @@ export function ServerRow({ server: s, onChange }: { server: ServerView; onChang
   const reconnectPrimary = s.status === "error" && !loginPrimary;
   const canLogin = http && s.status !== "connected" && s.status !== "disabled" && s.status !== "authenticating";
 
+  const remove = async () => {
+    if (!confirm(`Remove ${s.name}? Its configuration is deleted from your config file.`)) return;
+    try {
+      await api(serverPath(s.name), "DELETE");
+      toast(`Removed ${s.name}.`);
+    } catch (e) {
+      toastError(e);
+    }
+    onChange();
+  };
+  const act = async (sub: string) => {
+    try {
+      await post(sub)();
+    } catch (e) {
+      toastError(e);
+    }
+    onChange();
+  };
+
   return (
-    <div class={"row " + s.status}>
-      <span class="dot" aria-hidden="true" />
-      <div class="main">
+    <div class={"server " + s.status}>
+      <div class="ident">
         <div class="title">
           <span class="name">{s.name}</span>
-          <span class="state">{stateLabel(s)}</span>
+          <span class="status"><span class="dot" aria-hidden="true" />{statusLabel(s)}</span>
         </div>
         <div class="target">{s.target}</div>
       </div>
-      <div class="actions">
-        {s.status === "authenticating" && s.loginUrl ? (
-          <a class="btn primary" href={s.loginUrl} target="_blank" rel="noopener">Open login page</a>
-        ) : (
-          canLogin && <ActionButton label="Log in" class={loginPrimary ? "primary" : "ghost"} run={post("login")} onDone={onChange} />
-        )}
+      <div class="controls">
         {s.status === "connected" && s.toolsTotal > 0 && (
-          <button class="btn ghost" aria-expanded={toolsOpen} onClick={() => setToolsOpen(!toolsOpen)}>
-            {toolsOpen ? "Hide tools" : "Tools"}
+          <button class="btn tools-btn" onClick={() => props.onTools(s.name)}>
+            <Icon name="tools" size={15} />
+            {s.tools === s.toolsTotal ? `${s.tools} tools` : `${s.tools} of ${s.toolsTotal} tools`}
           </button>
         )}
-        {(s.status === "connected" || s.status === "error") && (
-          <ActionButton label="Reconnect" class={reconnectPrimary ? "primary" : "ghost"} run={post("reconnect")} onDone={onChange} />
+        {s.status === "authenticating" && s.loginUrl ? (
+          <a class="btn primary" href={s.loginUrl} target="_blank" rel="noopener">Open login page <Icon name="external" size={14} /></a>
+        ) : (
+          canLogin && <ActionButton label="Log in" class={loginPrimary ? "primary" : ""} run={post("login")} onDone={onChange} />
         )}
-        <ActionButton
-          label={s.status === "disabled" ? "Enable" : "Disable"}
-          class="ghost"
-          run={post(s.status === "disabled" ? "enable" : "disable")}
-          onDone={onChange}
+        {reconnectPrimary && <ActionButton label="Reconnect" class="primary" run={post("reconnect")} onDone={onChange} />}
+        <Menu
+          label={`More actions for ${s.name}`}
+          items={[
+            ...(s.status === "connected" || s.status === "error" ? [{ label: "Reconnect", onSelect: () => void act("reconnect") }] : []),
+            ...(s.status === "disabled"
+              ? [{ label: "Enable", onSelect: () => void act("enable") }]
+              : [{ label: "Disable", onSelect: () => void act("disable") }]),
+            { label: "Remove…", danger: true, onSelect: () => void remove() },
+          ]}
         />
-        <button
-          class={"btn ghost danger" + (armed ? " armed" : "")}
-          aria-label={armed ? `Confirm removing ${s.name}` : `Remove ${s.name}`}
-          onClick={async () => {
-            if (!armed) return setArmed(true);
-            setArmed(false);
-            try {
-              await api(serverPath(s.name), "DELETE");
-              toast(`Removed ${s.name}.`);
-            } catch (e) {
-              toastError(e);
-            }
-            onChange();
-          }}
-        >
-          {armed ? "Confirm remove" : "Remove"}
-        </button>
       </div>
       {s.status === "authenticating" && <div class="notice">{loginNotice(s)}</div>}
-      {s.status === "connected" && toolsOpen && <ToolsPanel server={s.name} onChange={onChange} />}
       {s.error && <ErrorBox message={s.error} hint={help?.hint} />}
     </div>
   );
@@ -104,12 +100,13 @@ export function ServerRow({ server: s, onChange }: { server: ServerView; onChang
 function ErrorBox({ message, hint }: { message: string; hint?: string }) {
   const [open, setOpen] = useState(!hint);
   return (
-    <div class={"err" + (open ? " open" : "")} role="group" aria-label="Connection problem">
-      {hint && <div class="hint">{hint}</div>}
-      {(open || !hint) && <div class="msg">{message}</div>}
-      {hint && (
-        <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "Hide technical details" : "Technical details"}</button>
-      )}
+    <div class="err" role="group" aria-label="Connection problem">
+      <Icon name="alert" size={16} />
+      <div>
+        {hint && <div class="hint">{hint}</div>}
+        {(open || !hint) && <div class="msg">{message}</div>}
+        {hint && <button type="button" class="link" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "Hide technical details" : "Technical details"}</button>}
+      </div>
     </div>
   );
 }

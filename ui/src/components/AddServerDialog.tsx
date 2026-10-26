@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { McpServerConfig } from "../../../src/types/index";
 import { api } from "../api";
-import { buildConfig, emptyForm, formFromConfig, validateName, type FormErrors, type ServerForm, type ServerKind } from "../lib/server-form";
+import { buildConfig, emptyForm, formFromConfig, mergeConfig, validateName, type FormErrors, type ServerForm, type ServerKind } from "../lib/server-form";
 
 export interface InstallRequest {
   name: string;
@@ -76,7 +76,7 @@ export function AddServerDialog(props: { request: InstallRequest; existing: stri
     } else {
       const built = buildConfig({ ...form, kind: mode });
       Object.assign(errs, built.errors);
-      config = built.config;
+      config = built.config && mergeConfig(request.config, built.config);
     }
     if (Object.keys(errs).length || !config) return showErrors(errs);
     setBusy(true);
@@ -93,7 +93,7 @@ export function AddServerDialog(props: { request: InstallRequest; existing: stri
   const preview = mode === "json" ? null : buildConfig({ ...form, kind: mode }).config;
   const errorList = Object.entries(errors);
   return (
-    <dialog ref={ref} onClose={props.onClose} aria-labelledby="dtitle">
+    <dialog ref={ref} class="form-dialog" onClose={props.onClose} aria-labelledby="dtitle">
       <form onSubmit={submit} noValidate>
         <h2 id="dtitle">{request.title}</h2>
         {request.setup && <p class="muted">Setup: {request.setup}</p>}
