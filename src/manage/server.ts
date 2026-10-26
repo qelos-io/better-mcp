@@ -3,6 +3,8 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from "node:net";
 import type { UpstreamManager } from "../services/manager.service.js";
 import type { Catalog } from "./catalog.js";
+import { readAllSettings } from "./settings-schema.js";
+import type { SettingsStore } from "./settings-store.js";
 import { UI_MISSING_HTML, readStatic } from "./static.js";
 
 export interface ManageDeps {
@@ -19,6 +21,8 @@ export interface ManageDeps {
   host?: string;
   /** Directory holding the built web UI (index.html + assets). */
   uiDir: string;
+  /** Where the editable settings live. */
+  settings: SettingsStore;
 }
 
 const MAX_BODY = 1_000_000;
@@ -58,6 +62,8 @@ export class ManageServer {
   private server?: Server;
   private starting?: Promise<string>;
   private port = 0;
+  /** Settings are read once at startup, so any saved change needs a restart. */
+  private restartRequired = false;
 
   constructor(private readonly deps: ManageDeps) {}
 
@@ -129,6 +135,21 @@ export class ManageServer {
     const { manager } = this.deps;
     if (method === "GET" && api === "state") {
       return [200, { servers: manager.list(), persistent: this.deps.persistent }];
+    }
+    if (api === "settings") {
+      const { settings } = this.deps;
+      if (method === "GET") {
+        const values = readAllSettings(await settings.read());
+        return [200, { values, writable: !!settings.write, restartRequired: this.restartRequired }];
+      }
+      if (method === "POST") {
+        if (!settings.write) throw new Error("this config was supplied inline and can't be saved");
+        const body = (await readJson(req)) as { patch?: unknown };
+        if (!body.patch || typeof body.patch !== "object" || Array.isArray(body.patch)) throw new Error("body must be { patch: object }");
+        await settings.write(body.patch as Record<string, unknown>);
+        this.restartRequired = true;
+        return [200, { ok: true, restartRequired: true }];
+      }
     }
     if (method === "GET" && api === "catalog") return [200, await this.deps.catalog()];
     if (method === "POST" && api === "servers") {

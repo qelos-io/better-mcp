@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { UpstreamManager } from "../../services/manager.service.js";
 import type { UpstreamServer } from "../../services/upstream.service.js";
 import { ManageServer, isLocalHost } from "../server.js";
+import type { SettingsStore } from "../settings-store.js";
 
 function fake(name: string): UpstreamServer {
   const tools = [{ server: name, name: "t0", description: "d", inputSchema: {} }];
@@ -31,6 +32,12 @@ async function uiDir(): Promise<string> {
   return dir;
 }
 
+const written: Record<string, unknown>[] = [];
+const settingsStore: SettingsStore = {
+  read: async () => ({ namespace: false, middleware: { redact: ["token"] } }),
+  write: async (patch) => void written.push(patch),
+};
+
 async function start(persistent = true) {
   const manager = new UpstreamManager(
     { a: { command: "x" } },
@@ -41,6 +48,7 @@ async function start(persistent = true) {
     manager,
     persistent,
     uiDir: await uiDir(),
+    settings: settingsStore,
     catalog: async () => ({ entries: [], source: "none" }),
   });
   const url = await server.ensureStarted();
@@ -191,7 +199,7 @@ test("static: serves assets with a content type, refuses traversal, 503 when the
     await server.close();
   }
   const manager = new UpstreamManager({}, { save: async () => {} });
-  const bare = new ManageServer({ manager, persistent: true, uiDir: "/nonexistent-ui-dir", catalog: async () => ({ entries: [], source: "none" }) });
+  const bare = new ManageServer({ manager, persistent: true, uiDir: "/nonexistent-ui-dir", settings: { read: async () => ({}) }, catalog: async () => ({ entries: [], source: "none" }) });
   const bareUrl = await bare.ensureStarted();
   try {
     const res = await fetch(bareUrl);
@@ -199,5 +207,31 @@ test("static: serves assets with a content type, refuses traversal, 503 when the
     assert.match(await res.text(), /not built/);
   } finally {
     await bare.close();
+  }
+});
+
+test("settings API: reads current values, saves a patch and flags a restart; inline configs are read-only", async () => {
+  const { server, url } = await start();
+  try {
+    const get = async () => (await (await fetch(url + "api/settings")).json()) as { values: Record<string, unknown>; writable: boolean; restartRequired: boolean };
+    assert.deepEqual(await get(), { values: { namespace: false, redact: ["token"] }, writable: true, restartRequired: false });
+    const post = (body: unknown) => fetch(url + "api/settings", { method: "POST", headers: H, body: JSON.stringify(body) });
+    assert.equal((await post({ patch: { namespace: true } })).status, 200);
+    assert.deepEqual(written.at(-1), { namespace: true });
+    assert.equal((await get()).restartRequired, true);
+    assert.equal((await post({ patch: [] })).status, 400);
+    assert.equal((await post({})).status, 400);
+  } finally {
+    await server.close();
+  }
+  const manager = new UpstreamManager({}, { save: async () => {} });
+  const inline = new ManageServer({ manager, persistent: false, uiDir: "/x", settings: { read: async () => ({}) }, catalog: async () => ({ entries: [], source: "none" }) });
+  const inlineUrl = await inline.ensureStarted();
+  try {
+    const res = await fetch(inlineUrl + "api/settings", { method: "POST", headers: H, body: JSON.stringify({ patch: {} }) });
+    assert.equal(res.status, 400);
+    assert.equal(((await (await fetch(inlineUrl + "api/settings")).json()) as { writable: boolean }).writable, false);
+  } finally {
+    await inline.close();
   }
 });

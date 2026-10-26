@@ -67,3 +67,31 @@ dialog::backdrop{background:#0008}
 .toolbar{display:flex;gap:8px;margin-bottom:12px}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);max-width:min(480px,92vw);background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:14px;box-shadow:0 8px 24px #0004}
 @media (max-width:560px){.row{grid-template-columns:10px minmax(0,1fr)}.actions{grid-column:2/-1;justify-content:flex-start;margin-top:8px}}
+
+.group{margin-bottom:28px}
+.group h2{font-size:13px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0;margin:0 0 8px}
+.setting{padding:14px 16px}
+.setting+.setting{border-top:1px solid var(--line)}
+.setting-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.setting-head p{margin:2px 0 0;font-size:13px;max-width:60ch}
+.options{border:0;margin:12px 0 0;padding:0;display:grid;gap:14px;min-width:0}
+.checks{display:flex;flex-wrap:wrap;gap:8px 24px}
+.fields{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));align-items:start}
+.fields .field{margin:0}
+.fields small{font-size:12px}
+.check{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;align-items:start;font-size:14px;cursor:pointer}
+.check input{width:auto;margin:4px 0 0;accent-color:var(--accent)}
+.check small{grid-column:2}
+textarea.short{min-height:84px}
+select{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+.switch{position:relative;flex:none;width:36px;height:20px;margin-top:2px}
+.switch input{position:absolute;inset:0;opacity:0;margin:0;width:100%;height:100%;cursor:pointer}
+.switch .track{position:absolute;inset:0;border-radius:999px;background:var(--line);transition:background .15s;pointer-events:none}
+.switch .track::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--card);box-shadow:0 1px 2px #0003;transition:transform .15s}
+.switch input:checked+.track{background:var(--accent)}
+.switch input:checked+.track::after{transform:translateX(16px)}
+.switch input:focus-visible+.track{outline:2px solid var(--focus);outline-offset:2px}
+.switch input:disabled{cursor:default}
+.savebar{position:sticky;bottom:16px;display:flex;gap:8px;align-items:center;justify-content:flex-end;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;box-shadow:0 8px 24px #0002}
+.savebar span{margin-right:auto;font-size:14px}
+@media (prefers-reduced-motion:reduce){.switch .track,.switch .track::after{transition:none}}

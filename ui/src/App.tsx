@@ -4,6 +4,7 @@ import { api } from "./api";
 import { InstallDialog, type InstallRequest } from "./components/InstallDialog";
 import { Marketplace } from "./components/Marketplace";
 import { ServerList } from "./components/ServerList";
+import { SettingsPage } from "./components/SettingsPage";
 import { useToast } from "./toast";
 
 interface State {
@@ -11,10 +12,15 @@ interface State {
   persistent: boolean;
 }
 
-type Tab = "servers" | "market";
+type Tab = "servers" | "market" | "settings";
+const TAB_LABEL: Record<Tab, string> = { servers: "Servers", market: "Marketplace", settings: "Settings" };
 
 export function App() {
-  const [tab, setTab] = useState<Tab>("servers");
+  const [tab, setTabState] = useState<Tab>(() => (location.hash.slice(1) in TAB_LABEL ? (location.hash.slice(1) as Tab) : "servers"));
+  const setTab = (t: Tab) => {
+    setTabState(t);
+    history.replaceState(null, "", "#" + t);
+  };
   const [state, setState] = useState<State>({ servers: [], persistent: true });
   const [catalog, setCatalog] = useState<Catalog>({ entries: [], source: "none" });
   const [install, setInstall] = useState<InstallRequest | null>(null);
@@ -45,9 +51,9 @@ export function App() {
       <div class="top">
         <h1>better-mcp</h1>
         <div class="tabs" role="tablist">
-          {(["servers", "market"] as const).map((t) => (
+          {(["servers", "market", "settings"] as const).map((t) => (
             <button class="tab" role="tab" aria-selected={tab === t} onClick={() => setTab(t)}>
-              {t === "servers" ? "Servers" : "Marketplace"}
+              {TAB_LABEL[t]}
             </button>
           ))}
         </div>
@@ -55,7 +61,9 @@ export function App() {
       {!state.persistent && (
         <div class="banner">This config was supplied inline, so changes last only until better-mcp restarts.</div>
       )}
-      {tab === "servers" ? (
+      {tab === "settings" ? (
+        <SettingsPage onSaved={refresh} />
+      ) : tab === "servers" ? (
         <ServerList
           servers={state.servers}
           onChange={refresh}

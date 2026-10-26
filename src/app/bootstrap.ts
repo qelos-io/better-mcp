@@ -10,6 +10,7 @@ import { resolveSlimConfig } from "../lib/slim.js";
 import { loadCatalog } from "../manage/catalog.js";
 import { resolveManageOptions } from "../manage/options.js";
 import { ManageServer } from "../manage/server.js";
+import { fileSettingsStore, readOnlySettingsStore } from "../manage/settings-store.js";
 import { MiddlewarePipeline } from "../middleware/pipeline.js";
 import { createBuiltinTools } from "../services/builtin.service.js";
 import { UpstreamManager } from "../services/manager.service.js";
@@ -53,6 +54,9 @@ export async function bootstrap(opts: { entryDir: string }): Promise<void> {
           manager,
           persistent: configPath !== undefined,
           uiDir: resolve(opts.entryDir, "ui"),
+          settings: configPath
+            ? fileSettingsStore(configPath)
+            : readOnlySettingsStore(config as unknown as Record<string, unknown>),
           ...resolveManageOptions(manageCfg),
           catalog: () =>
             loadCatalog({
