@@ -134,6 +134,8 @@ export interface ConnectOptions {
   interactive?: boolean;
   /** Receives the login URL when an interactive login starts. */
   onLoginUrl?: (url: string) => void;
+  /** Fires when the browser has returned and the login is being completed. */
+  onLoginCode?: () => void;
   /** Choose where OAuth state is kept. Default: a file under `~/.better-mcp/auth`. */
   createStore?: (name: string, url: string) => CredentialStore;
 }
@@ -144,7 +146,7 @@ export async function connectServer(
   cfg: McpServerConfig,
   opts: ConnectOptions = {},
 ): Promise<UpstreamServer> {
-  if (cfg.url) return connectRemote(name, cfg, opts.interactive === true, opts.onLoginUrl, opts.createStore);
+  if (cfg.url) return connectRemote(name, cfg, opts.interactive === true, opts.onLoginUrl, opts.createStore, opts.onLoginCode);
   return connectStdio(name, cfg);
 }
 
@@ -191,6 +193,7 @@ async function connectRemote(
   interactive: boolean,
   onLoginUrl?: (url: string) => void,
   createStore?: (name: string, url: string) => CredentialStore,
+  onLoginCode?: () => void,
 ): Promise<UpstreamServer> {
   const url = new URL(cfg.url!);
   const requestInit = buildRequestInit(cfg.headers);
@@ -207,6 +210,7 @@ async function connectRemote(
     port,
     interactive,
     onAuthUrl: onLoginUrl,
+    onCode: onLoginCode,
     hub: hubFor(port),
     store: createStore
       ? createStore(name, url.href)
@@ -222,11 +226,17 @@ async function connectRemote(
     if (!(err instanceof UnauthorizedError)) throw err;
     if (!interactive) throw new NeedsAuthError(name);
     try {
-      await transport.finishAuth(await provider.waitForCode());
+      const code = await provider.waitForCode();
+      const t0 = Date.now();
+      await transport.finishAuth(code);
+      process.stderr.write(`[better-mcp] ${name}: token exchange took ${Date.now() - t0}ms\n`);
     } finally {
       await releaseHub(port);
     }
-    return connectWithTransport(name, makeTransport());
+    const t1 = Date.now();
+    const server = await connectWithTransport(name, makeTransport());
+    process.stderr.write(`[better-mcp] ${name}: connected after login in ${Date.now() - t1}ms\n`);
+    return server;
   }
 }
 

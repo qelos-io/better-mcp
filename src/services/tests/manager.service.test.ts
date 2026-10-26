@@ -204,3 +204,28 @@ test("describeError surfaces the network cause behind 'fetch failed'", () => {
   assert.equal(describeError(new Error("boom")), "boom");
   assert.equal(describeError("x"), "x");
 });
+
+test("login: finishing is exposed after the browser returns, and hides the login link", async () => {
+  let release!: () => void;
+  const gate = new Promise<void>((r) => (release = r));
+  const manager = new UpstreamManager(
+    { authy: { url: "https://a/mcp" } },
+    {
+      async connect(name, _cfg, o) {
+        o.onLoginUrl?.("https://auth.example/authorize");
+        o.onLoginCode?.();
+        await gate;
+        return fakeServer(name);
+      },
+    },
+  );
+  const p = manager.login("authy");
+  await new Promise((r) => setImmediate(r));
+  const view = manager.list()[0];
+  assert.equal(view.status, "authenticating");
+  assert.equal(view.finishing, true);
+  assert.equal(view.loginUrl, undefined);
+  release();
+  await p;
+  assert.equal(manager.list()[0].finishing, undefined);
+});

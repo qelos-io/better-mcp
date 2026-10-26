@@ -1,3 +1,4 @@
+import { callbackPage } from "./callback-page.js";
 import { createHash, randomBytes } from "node:crypto";
 import { execFile } from "node:child_process";
 import { createServer, type Server } from "node:http";
@@ -159,7 +160,7 @@ export class CallbackHub {
     const state = url.searchParams.get("state") ?? "";
     const waiter = this.pending.get(state);
     if (!waiter) {
-      res.writeHead(400, { "content-type": "text/plain" }).end("Unknown or expired login request.");
+      res.writeHead(400, { "content-type": "text/html" }).end(callbackPage("error", "Unknown or expired login request."));
       return;
     }
     this.pending.delete(state);
@@ -168,13 +169,11 @@ export class CallbackHub {
     if (error || !code) {
       const detail = url.searchParams.get("error_description") ?? error ?? "no authorization code";
       waiter.reject(new Error(`authorization failed: ${detail}`));
-      res.writeHead(400, { "content-type": "text/plain" }).end(`Login failed: ${detail}`);
+      res.writeHead(400, { "content-type": "text/html" }).end(callbackPage("error", detail));
       return;
     }
     waiter.resolve(code);
-    res
-      .writeHead(200, { "content-type": "text/html" })
-      .end("<html><body style=\"font-family:sans-serif\"><h3>Logged in.</h3>You can close this tab and return to your MCP client.</body></html>");
+    res.writeHead(200, { "content-type": "text/html" }).end(callbackPage("success"));
   }
 
   async close(): Promise<void> {
@@ -218,6 +217,8 @@ export interface OAuthProviderOptions {
   interactive?: boolean;
   /** Called with the authorization URL before the browser is opened (lets a UI offer the link). */
   onAuthUrl?: (url: string) => void;
+  /** Called when the browser returns with an authorization code (before the token exchange). */
+  onCode?: () => void;
 }
 
 /**
@@ -306,7 +307,7 @@ export class BetterMcpOAuthProvider implements OAuthClientProvider {
     await this.opts.hub.start();
     const state = authorizationUrl.searchParams.get("state") ?? this.currentState ?? "";
     this.pendingCode = this.opts.hub.expect(state);
-    this.pendingCode.catch(() => {});
+    this.pendingCode.then(() => this.opts.onCode?.(), () => {});
     process.stderr.write(
       `[better-mcp] ${this.opts.serverName}: login required — opening browser (callback ${this.redirectUrl})\n`,
     );

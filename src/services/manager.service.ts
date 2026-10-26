@@ -22,6 +22,8 @@ export interface ServerView {
   error?: string;
   /** While `authenticating`: the provider's login page, for when no browser could be opened (Docker). */
   loginUrl?: string;
+  /** While `authenticating`: the browser has returned and better-mcp is finishing the login. */
+  finishing?: boolean;
   transport: "http" | "stdio";
   target: string;
   tools: number;
@@ -37,6 +39,7 @@ interface Entry {
   status: ServerStatus;
   error?: string;
   loginUrl?: string;
+  finishing?: boolean;
   server?: UpstreamServer;
 }
 
@@ -96,7 +99,8 @@ export class UpstreamManager {
       name,
       status: e.status,
       error: e.error,
-      loginUrl: e.status === "authenticating" ? e.loginUrl : undefined,
+      loginUrl: e.status === "authenticating" && !e.finishing ? e.loginUrl : undefined,
+      finishing: e.status === "authenticating" && e.finishing ? true : undefined,
       transport: e.config.url ? "http" : "stdio",
       target: e.config.url ?? [e.config.command, ...(e.config.args ?? [])].join(" "),
       tools: e.server?.tools.length ?? 0,
@@ -213,6 +217,7 @@ export class UpstreamManager {
     e.status = interactive ? "authenticating" : "connecting";
     e.error = undefined;
     e.loginUrl = undefined;
+    e.finishing = false;
     await this.detach(e);
     this.sync();
     try {
@@ -221,6 +226,10 @@ export class UpstreamManager {
         createStore: this.createStore,
         onLoginUrl: (url) => {
           e.loginUrl = url;
+          this.emit();
+        },
+        onLoginCode: () => {
+          e.finishing = true;
           this.emit();
         },
       });

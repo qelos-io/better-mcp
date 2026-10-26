@@ -166,14 +166,14 @@ function serverRow(s) {
   };
   actions.append(rm);
 
-  const label = LABEL[s.status] || s.status;
+  const label = s.finishing ? "Finishing sign-in…" : LABEL[s.status] || s.status;
   const counts = countsText(s);
   const main = el("div", { className: "main" },
     el("div", { className: "title" }, el("span", { className: "name", textContent: s.name }), el("span", { className: "state", textContent: counts ? label + " · " + counts : label })),
     el("div", { className: "target", textContent: s.target }));
   const row = el("div", { className: "row " + s.status }, el("span", { className: "dot", "aria-hidden": "true" }), main, actions);
   if (s.status === "authenticating")
-    row.append(el("div", { className: "notice", textContent: s.loginUrl ? "Finish signing in in your browser. If no window opened, use the login page link." : "Starting login…" }));
+    row.append(el("div", { className: "notice", textContent: s.finishing ? "Signed in. Connecting and loading tools, this can take a few seconds." : s.loginUrl ? "Finish signing in in your browser. If no window opened, use the login page link." : "Starting login…" }));
   if (s.error) {
     const box = el("div", { className: "err" }, el("div", { className: "msg", textContent: s.error }));
     if (s.error.length > 110) {

@@ -77,6 +77,7 @@ test("CallbackHub: routes code by state and serves success page", async () => {
     const r1 = await fetch(`${callbackUrl(port)}?code=c1&state=s1`);
     assert.equal(r1.status, 200);
     assert.equal(r2.status, 200);
+    assert.match(await r1.text(), /signed in/);
     assert.equal(await p1, "c1");
     assert.equal(await p2, "c2");
   } finally {
@@ -121,6 +122,7 @@ async function makeProvider(config = {}, port = 33418) {
   const opened: string[] = [];
   const hubPort = randomPort();
   const hub = new CallbackHub(hubPort);
+  const codes: string[] = [];
   const provider = new BetterMcpOAuthProvider({
     serverName: "srv",
     config,
@@ -128,8 +130,9 @@ async function makeProvider(config = {}, port = 33418) {
     hub,
     store: new FileCredentialStore(join(dir, "s.json")),
     openUrl: (u) => opened.push(u),
+    onCode: () => void codes.push("code"),
   });
-  return { provider, hub, opened, hubPort, port };
+  return { provider, hub, opened, hubPort, port, codes };
 }
 
 test("provider: metadata advertises loopback redirect and scopes", async () => {
@@ -166,7 +169,7 @@ test("provider: tokens and code verifier persist; missing verifier throws", asyn
 });
 
 test("provider: redirectToAuthorization opens browser and waitForCode resolves on callback", async () => {
-  const { provider, hub, opened, hubPort } = await makeProvider();
+  const { provider, hub, opened, hubPort, codes } = await makeProvider();
   try {
     await assert.rejects(provider.waitForCode(), /no login/);
     const state = provider.state();
@@ -182,6 +185,8 @@ test("provider: redirectToAuthorization opens browser and waitForCode resolves o
     assert.deepEqual(opened, [url.toString()]);
     await fetch(`${callbackUrl(hubPort)}?code=abc&state=${state}`);
     assert.equal(await provider.waitForCode(), "abc");
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(codes, ["code"]);
   } finally {
     await hub.close();
   }
