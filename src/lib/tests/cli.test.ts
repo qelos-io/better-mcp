@@ -28,6 +28,14 @@ test("resolveCli: help in every spelling prints usage and exits 0", () => {
   assert.match(helpText(), /--config/);
 });
 
+test("resolveCli: app selects the management-app-only mode, with or without a config", () => {
+  assert.deepEqual(resolveCli(["app"]), { action: "app" });
+  assert.deepEqual(resolveCli(["app", "--config", "my.json"]), { action: "app" });
+  assert.deepEqual(resolveCli(["app", "-c", "my.json"]), { action: "app" });
+  assert.deepEqual(resolveCli(["-c", "my.json", "app"]), { action: "app" });
+  assert.match(helpText(), /better-mcp app/);
+});
+
 test("resolveCli: a flag's value is never read as a command", () => {
   assert.deepEqual(resolveCli(["-c", "help"]), { action: "run" });
   assert.deepEqual(resolveCli(["--listen-path", "version"]), { action: "run" });

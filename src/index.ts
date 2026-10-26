@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
+import { runApp } from "./app/app.js";
 import { bootstrap } from "./app/bootstrap.js";
 import { resolveCli } from "./lib/cli.js";
 
@@ -13,7 +14,7 @@ if (cli.action === "exit") {
 
 const entryDir = dirname(fileURLToPath(import.meta.url));
 
-bootstrap({ entryDir }).catch((err) => {
+(cli.action === "app" ? runApp({ entryDir }) : bootstrap({ entryDir })).catch((err) => {
   process.stderr.write(
     `[better-mcp] fatal: ${err instanceof Error ? err.stack ?? err.message : String(err)}\n`,
   );

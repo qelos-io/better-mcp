@@ -322,6 +322,13 @@ CLI commands (print and exit; they never start the stdio server):
 - `better-mcp version` (or `--version`, `-v`) — print the version, Node and platform.
 - `better-mcp help` (or `--help`, `-h`) — usage, options and environment variables.
 
+- `better-mcp app [-c file.json]` — open **only** the management app for that
+  config (installs, logins, tool toggles, settings), with no stdio server and no
+  HTTP listener, so you can manage `mcp.json` outside any agent client. It
+  prints the app's URL, opens your browser, and runs until Ctrl+C. It connects
+  the configured servers so their status and tools show up, and works even if
+  `manage.enabled` is `false`.
+
 Any other bare word is rejected with usage and exit code 2, instead of silently
 starting the proxy.
 

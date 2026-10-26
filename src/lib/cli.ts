@@ -2,6 +2,7 @@ import { startupBanner } from "./version.js";
 
 export type CliResult =
   | { action: "run" }
+  | { action: "app" }
   | { action: "exit"; code: number; stdout?: string; stderr?: string };
 
 /** Flags that take the next argument as their value, so that value is never read as a command. */
@@ -12,6 +13,7 @@ export function helpText(): string {
 
 Usage
   better-mcp [options]        Start the proxy on stdio (what MCP clients run)
+  better-mcp app [-c file]    Open only the management app for a config file (no stdio)
   better-mcp version          Print the version and exit
   better-mcp help             Show this help and exit
 
@@ -50,6 +52,7 @@ export function resolveCli(argv: string[]): CliResult {
   const command = positional[0]?.toLowerCase();
   if (wantHelp || command === "help") return { action: "exit", code: 0, stdout: helpText() };
   if (wantVersion || command === "version") return { action: "exit", code: 0, stdout: startupBanner() + "\n" };
+  if (command === "app") return { action: "app" };
   if (command) {
     return { action: "exit", code: 2, stderr: `Unknown command "${positional[0]}".\n\n${helpText()}` };
   }
