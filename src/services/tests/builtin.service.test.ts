@@ -14,7 +14,7 @@ test("formatStatus: summarises each status", () => {
     view({ name: "b", status: "needs_auth" }),
     view({ name: "c", status: "error", error: "boom" }),
   ]);
-  assert.equal(out, "- a: connected (3 tools)\n- b: needs auth\n- c: error (boom)");
+  assert.equal(out, "- a: connected (3 tools) — t\n- b: needs auth — t\n- c: error (boom) — t");
 });
 
 function setup(servers: ServerView[]) {
@@ -35,7 +35,7 @@ test("manage_mcps: opens the URL and returns it with status; description lists p
   const out = await tools.manage_mcps.call({});
   assert.deepEqual(opened, ["http://127.0.0.1:1/tok/"]);
   assert.match(out.text, /http:\/\/127\.0\.0\.1:1\/tok\//);
-  assert.match(out.text, /- b: needs auth/);
+  assert.match(out.text, /- b: needs auth — t/);
   assert.match(tools.manage_mcps.description(), /needing login: b/);
 });
 

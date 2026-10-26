@@ -16,9 +16,9 @@ export function formatStatus(servers: ServerView[]): string {
   return servers
     .map((s) => {
       const label = s.status.replace("_", " ");
-      if (s.status === "connected") return `- ${s.name}: connected (${s.tools} tools)`;
-      if (s.status === "error") return `- ${s.name}: error (${s.error ?? "unknown"})`;
-      return `- ${s.name}: ${label}`;
+      if (s.status === "connected") return `- ${s.name}: connected (${s.tools} tools) — ${s.target}`;
+      if (s.status === "error") return `- ${s.name}: error (${s.error ?? "unknown"}) — ${s.target}`;
+      return `- ${s.name}: ${label} — ${s.target}`;
     })
     .join("\n");
 }

@@ -4,6 +4,7 @@ import { saveServers } from "../config/writer.js";
 import { startListenServer } from "../controllers/listen.controller.js";
 import { ConfigCredentialStore } from "../lib/credential-store.js";
 import { credentialsKey } from "../lib/oauth.js";
+import { enableEnvProxy } from "../lib/proxy-env.js";
 import { startupBanner } from "../lib/version.js";
 import { resolveSlimConfig } from "../lib/slim.js";
 import { loadCatalog } from "../manage/catalog.js";
@@ -16,6 +17,7 @@ import { buildProxyServer, startProxy } from "../services/proxy.service.js";
 
 export async function bootstrap(opts: { entryDir: string }): Promise<void> {
   process.stderr.write(`[better-mcp] ${startupBanner()}\n`);
+  if (enableEnvProxy()) process.stderr.write("[better-mcp] using proxy from environment\n");
   const { config, baseDir, source, configPath, rawServers } = await loadConfig({
     entryDir: opts.entryDir,
   });
