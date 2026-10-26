@@ -3,7 +3,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from "node:net";
 import type { UpstreamManager } from "../services/manager.service.js";
 import type { Catalog } from "./catalog.js";
-import { renderManagePage } from "./page.js";
+import { UI_MISSING_HTML, readStatic } from "./static.js";
 
 export interface ManageDeps {
   manager: Pick<
@@ -17,6 +17,8 @@ export interface ManageDeps {
   port?: number;
   /** Bind address. Default 127.0.0.1. */
   host?: string;
+  /** Directory holding the built web UI (index.html + assets). */
+  uiDir: string;
 }
 
 const MAX_BODY = 1_000_000;
@@ -101,8 +103,15 @@ export class ManageServer {
 
     const method = req.method ?? "GET";
     const sub = rest.join("/");
-    if (method === "GET" && (sub === "" || sub === "index.html")) {
-      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" }).end(renderManagePage());
+    if (method === "GET" && !sub.startsWith("api/")) {
+      const file = await readStatic(this.deps.uiDir, sub);
+      if (file) {
+        res.writeHead(200, { "content-type": file.type, "cache-control": "no-store" }).end(file.body);
+      } else if (sub === "" || sub === "index.html") {
+        res.writeHead(503, { "content-type": "text/html; charset=utf-8" }).end(UI_MISSING_HTML);
+      } else {
+        sendJson(res, 404, { error: "not found" });
+      }
       return;
     }
     if (!sub.startsWith("api/")) return void sendJson(res, 404, { error: "not found" });

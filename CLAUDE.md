@@ -60,6 +60,15 @@ in the npm package.
 Run a single file directly during development: `node --import tsx --test
 src/lib/tests/slim.test.ts`.
 
+## Management UI
+
+The web UI lives in `ui/` (Preact + Vite, TypeScript), separate from `src/`.
+`npm run build` compiles it into `dist/ui/`, which the manage server serves
+under its secret token path; it is built at publish time, not checked in.
+Shared API shapes live in `src/manage/api-types.ts` (type-only) so the UI and
+server can't drift. Keep pure UI logic in `ui/src/lib/` with tests in
+`ui/src/lib/tests/` (run by `npm test`); `npm run dev:ui` starts Vite.
+
 ## Build
 
 - `npm run build` — `tsc` compiles `src/` to `dist/`.

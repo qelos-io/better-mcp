@@ -52,6 +52,7 @@ export async function bootstrap(opts: { entryDir: string }): Promise<void> {
       : new ManageServer({
           manager,
           persistent: configPath !== undefined,
+          uiDir: resolve(opts.entryDir, "ui"),
           ...resolveManageOptions(manageCfg),
           catalog: () =>
             loadCatalog({

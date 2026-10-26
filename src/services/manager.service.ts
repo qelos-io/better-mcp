@@ -1,3 +1,4 @@
+import type { ServerStatus, ServerView, ToolView } from "../manage/api-types.js";
 import { interpolateEnvVars } from "../lib/env.js";
 import { validateServer } from "../config/loader.js";
 import type { McpServerConfig } from "../types/index.js";
@@ -8,31 +9,7 @@ import {
   type UpstreamServer,
 } from "./upstream.service.js";
 
-export type ServerStatus =
-  | "connecting"
-  | "connected"
-  | "needs_auth"
-  | "authenticating"
-  | "error"
-  | "disabled";
-
-export interface ServerView {
-  name: string;
-  status: ServerStatus;
-  error?: string;
-  /** While `authenticating`: the provider's login page, for when no browser could be opened (Docker). */
-  loginUrl?: string;
-  /** While `authenticating`: the browser has returned and better-mcp is finishing the login. */
-  finishing?: boolean;
-  transport: "http" | "stdio";
-  target: string;
-  /** Tools exposed to clients (enabled ones). */
-  tools: number;
-  /** Tools the server reports, including disabled ones. */
-  toolsTotal: number;
-  resources: number;
-  prompts: number;
-}
+export type { ServerStatus, ServerView, ToolView };
 
 interface Entry {
   /** As written in the config file (may contain `${VAR}`); what gets persisted. */
@@ -44,12 +21,6 @@ interface Entry {
   loginUrl?: string;
   finishing?: boolean;
   server?: UpstreamServer;
-}
-
-export interface ToolView {
-  name: string;
-  description?: string;
-  enabled: boolean;
 }
 
 export interface ManagerDeps {

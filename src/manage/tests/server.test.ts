@@ -1,3 +1,6 @@
+import { mkdtemp, writeFile, mkdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { UpstreamManager } from "../../services/manager.service.js";
@@ -20,6 +23,14 @@ function fake(name: string): UpstreamServer {
   return s as unknown as UpstreamServer;
 }
 
+async function uiDir(): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), "bm-ui-"));
+  await mkdir(join(dir, "assets"));
+  await writeFile(join(dir, "index.html"), "<!doctype html><title>better-mcp</title>");
+  await writeFile(join(dir, "assets", "app.js"), "console.log(1)");
+  return dir;
+}
+
 async function start(persistent = true) {
   const manager = new UpstreamManager(
     { a: { command: "x" } },
@@ -29,6 +40,7 @@ async function start(persistent = true) {
   const server = new ManageServer({
     manager,
     persistent,
+    uiDir: await uiDir(),
     catalog: async () => ({ entries: [], source: "none" }),
   });
   const url = await server.ensureStarted();
@@ -164,5 +176,28 @@ test("tools API: list, disable and enable a server's tools; bad bodies are 400",
     assert.equal((await post({ tools: ["t0"], enabled: true })).status, 200);
   } finally {
     await server.close();
+  }
+});
+
+test("static: serves assets with a content type, refuses traversal, 503 when the UI is not built", async () => {
+  const { server, url } = await start();
+  try {
+    const js = await fetch(url + "assets/app.js");
+    assert.equal(js.status, 200);
+    assert.match(js.headers.get("content-type") ?? "", /javascript/);
+    assert.equal((await fetch(url + "assets/missing.js")).status, 404);
+    assert.equal((await fetch(url + "%2e%2e/%2e%2e/etc/passwd")).status, 404);
+  } finally {
+    await server.close();
+  }
+  const manager = new UpstreamManager({}, { save: async () => {} });
+  const bare = new ManageServer({ manager, persistent: true, uiDir: "/nonexistent-ui-dir", catalog: async () => ({ entries: [], source: "none" }) });
+  const bareUrl = await bare.ensureStarted();
+  try {
+    const res = await fetch(bareUrl);
+    assert.equal(res.status, 503);
+    assert.match(await res.text(), /not built/);
+  } finally {
+    await bare.close();
   }
 });

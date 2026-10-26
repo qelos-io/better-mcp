@@ -1,22 +1,8 @@
 import { readFile } from "node:fs/promises";
 import type { McpServerConfig } from "../types/index.js";
+import type { Catalog, CatalogEntry } from "./api-types.js";
 
-export interface CatalogEntry {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  homepage: string;
-  logo: string | null;
-  tags: string[];
-  setup: string | null;
-  config: McpServerConfig;
-}
-
-export interface Catalog {
-  entries: CatalogEntry[];
-  source: "remote" | "bundled" | "none";
-}
+export type { Catalog, CatalogEntry };
 
 export const DEFAULT_CATALOG_URL =
   "https://raw.githubusercontent.com/qelos-io/better-mcp/main/docs/marketplace/servers.json";
