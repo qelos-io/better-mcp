@@ -289,6 +289,12 @@ export class UpstreamManager {
 /** Node's fetch reports every network failure as "fetch failed"; the real reason is in `cause`. */
 export function describeError(err: unknown): string {
   if (!(err instanceof Error)) return String(err);
+  if (/^HTTP 403: Invalid OAuth error response/.test(err.message)) {
+    return (
+      "HTTP 403 from the server's OAuth endpoint: it refused to register better-mcp as a client. " +
+      'Some providers only allow approved clients; if you have a pre-registered client, set "oauth": { "clientId": "..." } on this server.'
+    );
+  }
   const cause = err.cause as { code?: string; message?: string; hostname?: string } | undefined;
   const detail = cause?.code ? (cause.hostname ? `${cause.code} ${cause.hostname}` : cause.code) : cause?.message;
   return detail && !err.message.includes(detail) ? `${err.message} (${detail})` : err.message;

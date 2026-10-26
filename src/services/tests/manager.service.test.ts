@@ -207,6 +207,10 @@ test("describeError surfaces the network cause behind 'fetch failed'", () => {
   assert.equal(describeError(dns), "fetch failed (ENOTFOUND x.example)");
   assert.equal(describeError(new Error("boom")), "boom");
   assert.equal(describeError("x"), "x");
+  assert.match(
+    describeError(new Error('HTTP 403: Invalid OAuth error response: SyntaxError: Unexpected token \'F\', "Forbidden" is not valid JSON. Raw body: Forbidden')),
+    /refused to register better-mcp.*clientId/,
+  );
 });
 
 test("login: finishing is exposed after the browser returns, and hides the login link", async () => {
