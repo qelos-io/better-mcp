@@ -196,10 +196,14 @@ export function browserCommand(
   return { cmd: "xdg-open", args: [url] };
 }
 
-export function openBrowser(url: string): void {
+/** Resolves false when no browser could be launched (sandbox, Docker, headless). */
+export function openBrowser(url: string): Promise<boolean> {
   const { cmd, args } = browserCommand(process.platform, url);
-  execFile(cmd, args, (err) => {
-    if (err) process.stderr.write(`[better-mcp] could not open a browser; open this URL manually:\n  ${url}\n`);
+  return new Promise((resolve) => {
+    execFile(cmd, args, (err) => {
+      if (err) process.stderr.write(`[better-mcp] could not open a browser; open this URL manually:\n  ${url}\n`);
+      resolve(!err);
+    });
   });
 }
 

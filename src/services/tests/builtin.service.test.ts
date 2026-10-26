@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createBuiltinTools, formatStatus } from "../builtin.service.js";
+import { createBuiltinTools, formatStatus, loginLinks } from "../builtin.service.js";
 import type { ServerView } from "../manager.service.js";
 
 const view = (o: Partial<ServerView> & { name: string }): ServerView => ({
@@ -26,7 +26,7 @@ function setup(servers: ServerView[]) {
     has: (n: string) => servers.some((s) => s.name === n),
     login: async (n: string) => void logins.push(n),
   };
-  const tools = createBuiltinTools({ manager, manageUrl: async () => "http://127.0.0.1:1/tok/", open: (u) => void opened.push(u) });
+  const tools = createBuiltinTools({ manager, manageUrl: async () => "http://127.0.0.1:1/tok/", loginUrlWaitMs: 0, open: (u) => void opened.push(u) });
   return { tools: Object.fromEntries(tools.map((t) => [t.name, t])), opened, logins };
 }
 
@@ -55,4 +55,33 @@ test("authenticate: named server, unknown server, local server, nothing to do", 
   const local = await tools.authenticate.call({ server: "loc" });
   assert.equal(local.isError, true);
   assert.equal((await tools.authenticate.call({})).text, "No servers need login.");
+});
+
+test("loginLinks: lists only servers that expose a login URL", () => {
+  const servers = [view({ name: "a", loginUrl: "https://x/auth" }), view({ name: "b" })];
+  assert.equal(loginLinks(servers, ["a", "b"]), "- a: https://x/auth");
+  assert.equal(loginLinks(servers, ["b"]), "");
+});
+
+test("manage_mcps: tells the agent to open the URL itself when no browser could be launched", async () => {
+  const manager = { list: () => [], needingLogin: () => [], has: () => false, login: async () => {} };
+  const [manage] = createBuiltinTools({ manager, manageUrl: async () => "http://127.0.0.1:1/tok/", open: () => false });
+  const out = await manage.call({});
+  assert.match(out.text, /Could not open a browser/);
+  assert.match(out.text, /http:\/\/127\.0\.0\.1:1\/tok\//);
+});
+
+test("authenticate: includes the login URL once the provider exposes it", async () => {
+  const servers = [view({ name: "r", status: "needs_auth" })];
+  const manager = {
+    list: () => servers,
+    needingLogin: () => ["r"],
+    has: () => true,
+    login: async () => {
+      servers[0] = view({ name: "r", status: "authenticating", loginUrl: "https://idp/authorize?x=1" });
+    },
+  };
+  const tools = createBuiltinTools({ manager, manageUrl: async () => "u", loginUrlWaitMs: 500 });
+  const out = await tools[1].call({});
+  assert.match(out.text, /- r: https:\/\/idp\/authorize\?x=1/);
 });

@@ -8,7 +8,9 @@ export interface BuiltinDeps {
   manager: ManagerApi;
   /** Starts the management UI if needed and returns its URL. */
   manageUrl: () => Promise<string>;
-  open?: (url: string) => void;
+  open?: (url: string) => void | boolean | Promise<boolean | void>;
+  /** How long `authenticate` waits for a login URL to appear before replying. */
+  loginUrlWaitMs?: number;
 }
 
 export function formatStatus(servers: ServerView[]): string {
@@ -23,9 +25,31 @@ export function formatStatus(servers: ServerView[]): string {
     .join("\n");
 }
 
+export function loginLinks(servers: ServerView[], names: string[]): string {
+  return names
+    .map((n) => servers.find((s) => s.name === n))
+    .filter((s): s is ServerView => !!s?.loginUrl)
+    .map((s) => `- ${s.name}: ${s.loginUrl}`)
+    .join("\n");
+}
+
 export function createBuiltinTools(deps: BuiltinDeps): BuiltinTool[] {
   const { manager } = deps;
   const open = deps.open ?? openBrowser;
+  const waitMs = deps.loginUrlWaitMs ?? 3000;
+
+  async function waitForLoginUrls(names: string[]): Promise<void> {
+    const deadline = Date.now() + waitMs;
+    while (Date.now() < deadline) {
+      const list = manager.list();
+      const pending = names.filter((n) => {
+        const v = list.find((s) => s.name === n);
+        return v?.status === "authenticating" && !v.loginUrl;
+      });
+      if (pending.length === 0) return;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  }
 
   const manage: BuiltinTool = {
     name: "manage_mcps",
@@ -41,10 +65,11 @@ export function createBuiltinTools(deps: BuiltinDeps): BuiltinTool[] {
     inputSchema: { type: "object", properties: {} },
     async call() {
       const url = await deps.manageUrl();
-      open(url);
-      return {
-        text: `Opened the better-mcp management app: ${url}\n\nServers:\n${formatStatus(manager.list())}`,
-      };
+      const opened = (await open(url)) !== false;
+      const head = opened
+        ? `Opened the better-mcp management app: ${url}`
+        : `Could not open a browser from here. Open this URL for the user (or give it to them): ${url}`;
+      return { text: `${head}\n\nServers:\n${formatStatus(manager.list())}` };
     },
   };
 
@@ -73,11 +98,16 @@ export function createBuiltinTools(deps: BuiltinDeps): BuiltinTool[] {
         }
       }
       for (const t of targets) manager.login(t).catch(() => {});
+      await waitForLoginUrls(targets);
+      const links = loginLinks(manager.list(), targets);
       return {
         text:
           `Started login for: ${targets.join(", ")}. A browser window should open; ` +
           "ask the user to complete it, then their tools will appear automatically. " +
-          "Call manage_mcps to check status.",
+          "Call manage_mcps to check status." +
+          (links
+            ? `\n\nIf no browser opened, open these login URLs for the user (or give them to them):\n${links}`
+            : ""),
       };
     },
   };
