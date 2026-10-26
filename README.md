@@ -317,6 +317,14 @@ See **[docs/popular-mcps.md](https://github.com/qelos-io/better-mcp/blob/main/do
 }
 ```
 
+CLI commands (print and exit; they never start the stdio server):
+
+- `better-mcp version` (or `--version`, `-v`) — print the version, Node and platform.
+- `better-mcp help` (or `--help`, `-h`) — usage, options and environment variables.
+
+Any other bare word is rejected with usage and exit code 2, instead of silently
+starting the proxy.
+
 CLI flags:
 
 - `-c <path>` / `--config <path>` — path to `mcp.json` (overrides discovery + env).
