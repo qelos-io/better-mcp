@@ -6,13 +6,12 @@ import { ConfigCredentialStore } from "../lib/credential-store.js";
 import { credentialsKey } from "../lib/oauth.js";
 import { enableEnvProxy } from "../lib/proxy-env.js";
 import { startupBanner } from "../lib/version.js";
-import { resolveSlimConfig } from "../lib/slim.js";
 import { loadCatalog } from "../manage/catalog.js";
 import { resolveManageOptions } from "../manage/options.js";
 import { ManageServer } from "../manage/server.js";
 import { fileSettingsStore, readOnlySettingsStore } from "../manage/settings-store.js";
-import { MiddlewarePipeline } from "../middleware/pipeline.js";
 import { createBuiltinTools } from "../services/builtin.service.js";
+import { RuntimeSettings } from "../services/runtime.service.js";
 import { UpstreamManager } from "../services/manager.service.js";
 import { buildProxyServer, startProxy } from "../services/proxy.service.js";
 
@@ -46,6 +45,7 @@ export async function bootstrap(opts: { entryDir: string }): Promise<void> {
     );
   }
 
+  const runtime = await RuntimeSettings.create(config, baseDir);
   const manageCfg = config.manage ?? {};
   const manageServer =
     manageCfg.enabled === false
@@ -57,6 +57,10 @@ export async function bootstrap(opts: { entryDir: string }): Promise<void> {
           settings: configPath
             ? fileSettingsStore(configPath)
             : readOnlySettingsStore(config as unknown as Record<string, unknown>),
+          applySettings: async () => {
+            const fresh = await loadConfig({ entryDir: opts.entryDir });
+            await runtime.apply(fresh.config, fresh.baseDir);
+          },
           ...resolveManageOptions(manageCfg),
           catalog: () =>
             loadCatalog({
@@ -68,13 +72,9 @@ export async function bootstrap(opts: { entryDir: string }): Promise<void> {
     ? createBuiltinTools({ manager, manageUrl: () => manageServer.ensureStarted() })
     : [];
 
-  const pipeline = await MiddlewarePipeline.build(config.middleware, baseDir);
-  const slim = resolveSlimConfig(config.middleware?.slim);
   const shared = {
     upstreams: manager.upstreams,
-    pipeline,
-    namespace: config.namespace ?? true,
-    slim,
+    runtime,
     builtins,
     onUpstreamsChange: (fn: () => void) => manager.onChange(fn),
   };

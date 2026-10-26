@@ -23,6 +23,8 @@ export interface ManageDeps {
   uiDir: string;
   /** Where the editable settings live. */
   settings: SettingsStore;
+  /** Re-reads the saved settings into the running proxy. Omit when changes need a restart. */
+  applySettings?: () => Promise<void>;
 }
 
 const MAX_BODY = 1_000_000;
@@ -147,8 +149,14 @@ export class ManageServer {
         const body = (await readJson(req)) as { patch?: unknown };
         if (!body.patch || typeof body.patch !== "object" || Array.isArray(body.patch)) throw new Error("body must be { patch: object }");
         await settings.write(body.patch as Record<string, unknown>);
-        this.restartRequired = true;
-        return [200, { ok: true, restartRequired: true }];
+        try {
+          await this.deps.applySettings?.();
+          this.restartRequired = !this.deps.applySettings;
+          return [200, { ok: true, applied: !this.restartRequired, restartRequired: this.restartRequired }];
+        } catch (err) {
+          this.restartRequired = true;
+          return [200, { ok: true, applied: false, restartRequired: true, error: err instanceof Error ? err.message : String(err) }];
+        }
       }
     }
     if (method === "GET" && api === "catalog") return [200, await this.deps.catalog()];

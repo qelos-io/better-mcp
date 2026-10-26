@@ -395,6 +395,15 @@ reconnects just that server, and sends `tools/list_changed` so the client
 refreshes without a restart. If the config was passed inline via
 `MCP_PROXY_CONFIG`, changes last only until restart.
 
+The **Settings** tab edits `namespace` and the middleware (slim, compact, clean
+text, dedup, offload, redact, log, trace) and applies them to the running proxy
+on save: a fresh pipeline replaces the old one (dedup cache and trace state
+start empty), calls already in flight finish on the old one, and clients get
+`tools/list_changed` when namespacing or slimming changes tool names or
+schemas. If the saved config can't be loaded (for example a broken `hooks`
+module), the previous settings stay active and the app says a restart is
+needed. `hooks` is not editable from the app.
+
 The app listens on `127.0.0.1` only, behind an unguessable URL token. The
 marketplace catalog is fetched from this repo's `docs/marketplace/servers.json`
 (falling back to a bundled copy offline), so new contributions show up without a

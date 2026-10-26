@@ -8,7 +8,7 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import type { MiddlewarePipeline } from "../middleware/pipeline.js";
+import type { RuntimeView } from "./runtime.service.js";
 import type { UpstreamServer } from "./upstream.service.js";
 import type { ProxyRequest } from "../types/index.js";
 import { VERSION } from "../lib/version.js";
@@ -101,16 +101,14 @@ export function buildRoutes(servers: UpstreamServer[], namespace: boolean, quiet
  */
 export function buildProxyServer(opts: {
   upstreams: UpstreamServer[];
-  pipeline: MiddlewarePipeline;
-  namespace: boolean;
-  slim: ResolvedSlimConfig | null;
+  runtime: RuntimeView;
   builtins?: BuiltinTool[];
   /** Subscribe to upstream set changes; returns an unsubscribe function. */
   onUpstreamsChange?: (fn: () => void) => () => void;
 }): McpServer {
-  const { upstreams, pipeline, namespace, slim } = opts;
+  const { upstreams, runtime } = opts;
   const builtins = new Map((opts.builtins ?? []).map((b) => [b.name, b]));
-  let routes = buildRoutes(upstreams, namespace);
+  let routes = buildRoutes(upstreams, runtime.namespace);
 
   const mcp = new McpServer(
     { name: "@qelos/better-mcp", version: VERSION },
@@ -124,21 +122,24 @@ export function buildProxyServer(opts: {
   );
   const server = mcp.server;
 
-  if (opts.onUpstreamsChange) {
-    const off = opts.onUpstreamsChange(() => {
-      routes = buildRoutes(upstreams, namespace, true);
-      for (const notify of [
-        () => server.sendToolListChanged(),
-        () => server.sendResourceListChanged(),
-        () => server.sendPromptListChanged(),
-      ]) {
-        // Not connected yet / already closed: nobody to tell.
-        notify().catch(() => {});
-      }
-    });
+  const announce = () => {
+    routes = buildRoutes(upstreams, runtime.namespace, true);
+    for (const notify of [
+      () => server.sendToolListChanged(),
+      () => server.sendResourceListChanged(),
+      () => server.sendPromptListChanged(),
+    ]) {
+      // Not connected yet / already closed: nobody to tell.
+      notify().catch(() => {});
+    }
+  };
+  const unsubscribe = [opts.onUpstreamsChange?.(announce), runtime.onChange?.(announce)].filter(
+    (off): off is () => void => !!off,
+  );
+  if (unsubscribe.length) {
     const prev = server.onclose;
     server.onclose = () => {
-      off();
+      for (const off of unsubscribe) off();
       prev?.();
     };
   }
@@ -151,7 +152,7 @@ export function buildProxyServer(opts: {
       description: b.description(),
       inputSchema: b.inputSchema,
     }));
-    return { tools: [...own, ...buildListedTools(upstreams, namespace, slim)] };
+    return { tools: [...own, ...buildListedTools(upstreams, runtime.namespace, runtime.slim)] };
   });
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
@@ -170,7 +171,7 @@ export function buildProxyServer(opts: {
       name: route.originalName,
       params: req.params.arguments,
     };
-    const res = await pipeline.invoke(proxyReq, async (r) =>
+    const res = await runtime.pipeline.invoke(proxyReq, async (r) =>
       route.server.client.callTool({
         name: r.name,
         arguments: (r.params ?? {}) as Record<string, unknown>,
@@ -208,7 +209,7 @@ export function buildProxyServer(opts: {
       name: uri,
       params: { uri },
     };
-    const res = await pipeline.invoke(proxyReq, async () => owner.client.readResource({ uri }));
+    const res = await runtime.pipeline.invoke(proxyReq, async () => owner.client.readResource({ uri }));
     if (res.error) throw new Error(res.error.message);
     return res.result as Record<string, unknown>;
   });
@@ -220,7 +221,7 @@ export function buildProxyServer(opts: {
     for (const s of upstreams) {
       for (const p of s.prompts) {
         prompts.push({
-          name: namespace ? `${s.name}${NS_SEPARATOR}${p.name}` : p.name,
+          name: runtime.namespace ? `${s.name}${NS_SEPARATOR}${p.name}` : p.name,
           description: p.description,
           arguments: p.arguments as { name: string; description?: string; required?: boolean }[] | undefined,
         });
@@ -240,7 +241,7 @@ export function buildProxyServer(opts: {
       name: route.originalName,
       params: req.params.arguments,
     };
-    const res = await pipeline.invoke(proxyReq, async (r) =>
+    const res = await runtime.pipeline.invoke(proxyReq, async (r) =>
       route.server.client.getPrompt({
         name: r.name,
         arguments: (r.params ?? {}) as Record<string, string>,

@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { AddressInfo } from "node:net";
 import { MiddlewarePipeline } from "../../middleware/pipeline.js";
+import { staticRuntime } from "../../services/runtime.service.js";
 import { headerValue, startListenServer } from "../listen.controller.js";
 
 // ============================================================================
@@ -37,9 +38,7 @@ test("startListenServer: throws when binding non-loopback host without a bearer"
       startListenServer({
         listen: { host: "0.0.0.0", port: 0 }, // no auth
         upstreams: [],
-        pipeline,
-        namespace: true,
-        slim: null,
+        runtime: staticRuntime(pipeline),
       }),
     /listen\.auth\.bearer is required/,
     "binding 0.0.0.0 with no bearer should refuse to start",
@@ -51,9 +50,7 @@ test("startListenServer: loopback bind without bearer is allowed", async () => {
   const server = await startListenServer({
     listen: { host: "127.0.0.1", port: 0 }, // no auth, but loopback
     upstreams: [],
-    pipeline,
-    namespace: true,
-    slim: null,
+    runtime: staticRuntime(pipeline),
   });
   await server.close();
 });
@@ -73,9 +70,7 @@ async function bootServer(opts: { bearer?: string } = {}) {
       auth: opts.bearer ? { bearer: opts.bearer } : undefined,
     },
     upstreams: [],
-    pipeline,
-    namespace: true,
-    slim: null,
+    runtime: staticRuntime(pipeline),
   });
   const { port } = server.httpServer.address() as AddressInfo;
   return {

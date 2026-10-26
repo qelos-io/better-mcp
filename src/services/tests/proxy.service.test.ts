@@ -130,11 +130,12 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { ToolListChangedNotificationSchema } from "@modelcontextprotocol/sdk/types.js";
 import { MiddlewarePipeline } from "../../middleware/pipeline.js";
 import { buildProxyServer, type BuiltinTool } from "../proxy.service.js";
+import { RuntimeSettings, staticRuntime } from "../runtime.service.js";
 import type { UpstreamServer } from "../upstream.service.js";
 
 async function connectProxy(opts: { upstreams: UpstreamServer[]; builtins?: BuiltinTool[]; onUpstreamsChange?: (fn: () => void) => () => void }) {
   const pipeline = await MiddlewarePipeline.build(undefined, "/tmp");
-  const mcp = buildProxyServer({ pipeline, namespace: true, slim: null, ...opts });
+  const mcp = buildProxyServer({ runtime: staticRuntime(pipeline), ...opts });
   const [a, b] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "t", version: "0" }, { capabilities: {} });
   await Promise.all([mcp.connect(a), client.connect(b)]);
@@ -202,4 +203,26 @@ test("live upstream changes: routes rebuilt, list_changed sent, unsubscribed on 
 
   await mcp.close();
   assert.equal(unsubscribed, true);
+});
+
+test("live settings: flipping namespace renames tools, re-routes calls and notifies clients; a new pipeline applies to later calls", async () => {
+  const runtime = await RuntimeSettings.create({}, "/tmp");
+  const mcp = buildProxyServer({ runtime, upstreams: [upstreamWithTool("s", "t", "\u001b[31mred\u001b[0m")] });
+  const [a, b] = InMemoryTransport.createLinkedPair();
+  const client = new Client({ name: "t", version: "0" }, { capabilities: {} });
+  await Promise.all([mcp.connect(a), client.connect(b)]);
+  assert.deepEqual((await client.listTools()).tools.map((t) => t.name), ["s__t"]);
+
+  const notified = new Promise<void>((resolve) => client.setNotificationHandler(ToolListChangedNotificationSchema, () => resolve()));
+  await runtime.apply({ namespace: false }, "/tmp");
+  await notified;
+  assert.deepEqual((await client.listTools()).tools.map((t) => t.name), ["t"]);
+  const res = (await client.callTool({ name: "t", arguments: {} })) as { content: { text: string }[] };
+  assert.equal(res.content[0].text, "red");
+  await assert.rejects(client.callTool({ name: "s__t", arguments: {} }), /Unknown tool/);
+
+  await runtime.apply({ namespace: false, middleware: { cleantext: false } }, "/tmp");
+  const raw = (await client.callTool({ name: "t", arguments: {} })) as { content: { text: string }[] };
+  assert.equal(raw.content[0].text, "\u001b[31mred\u001b[0m");
+  await mcp.close();
 });

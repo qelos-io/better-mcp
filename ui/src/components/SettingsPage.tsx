@@ -105,7 +105,8 @@ export function SettingsPage({ onSaved }: { onSaved: () => void }) {
   const save = async () => {
     setSaving(true);
     try {
-      await api("settings", "POST", { patch });
+      const res = await api<{ applied: boolean; error?: string }>("settings", "POST", { patch });
+      toast(res.applied ? "Saved and applied." : res.error ? `Saved, but not applied: ${res.error}` : "Saved.");
       await load();
       onSaved();
     } catch (e) {

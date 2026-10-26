@@ -6,8 +6,7 @@ import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import type { NextFunction, Request, Response } from "express";
 import { isLoopbackHost } from "../config/index.js";
 import { makeBearerAuth } from "../http/auth.middleware.js";
-import type { ResolvedSlimConfig } from "../lib/slim.js";
-import type { MiddlewarePipeline } from "../middleware/pipeline.js";
+import type { RuntimeView } from "../services/runtime.service.js";
 import { buildProxyServer, type BuiltinTool } from "../services/proxy.service.js";
 import type { UpstreamServer } from "../services/upstream.service.js";
 import type { ListenConfig } from "../types/index.js";
@@ -19,9 +18,7 @@ export interface ListenServer {
 
 interface ListenContext {
   upstreams: UpstreamServer[];
-  pipeline: MiddlewarePipeline;
-  namespace: boolean;
-  slim: ResolvedSlimConfig | null;
+  runtime: RuntimeView;
   builtins?: BuiltinTool[];
   onUpstreamsChange?: (fn: () => void) => () => void;
   transports: Record<string, StreamableHTTPServerTransport>;
@@ -34,9 +31,7 @@ interface ListenContext {
 export async function startListenServer(opts: {
   listen: ListenConfig;
   upstreams: UpstreamServer[];
-  pipeline: MiddlewarePipeline;
-  namespace: boolean;
-  slim: ResolvedSlimConfig | null;
+  runtime: RuntimeView;
   builtins?: BuiltinTool[];
   onUpstreamsChange?: (fn: () => void) => () => void;
 }): Promise<ListenServer> {
@@ -53,9 +48,7 @@ export async function startListenServer(opts: {
 
   const ctx: ListenContext = {
     upstreams: opts.upstreams,
-    pipeline: opts.pipeline,
-    namespace: opts.namespace,
-    slim: opts.slim,
+    runtime: opts.runtime,
     builtins: opts.builtins,
     onUpstreamsChange: opts.onUpstreamsChange,
     transports: {},
@@ -125,9 +118,7 @@ async function handlePost(ctx: ListenContext, req: Request, res: Response): Prom
       };
       const server = buildProxyServer({
         upstreams: ctx.upstreams,
-        pipeline: ctx.pipeline,
-        namespace: ctx.namespace,
-        slim: ctx.slim,
+        runtime: ctx.runtime,
         builtins: ctx.builtins,
         onUpstreamsChange: ctx.onUpstreamsChange,
       });

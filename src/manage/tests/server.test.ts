@@ -216,7 +216,9 @@ test("settings API: reads current values, saves a patch and flags a restart; inl
     const get = async () => (await (await fetch(url + "api/settings")).json()) as { values: Record<string, unknown>; writable: boolean; restartRequired: boolean };
     assert.deepEqual(await get(), { values: { namespace: false, redact: ["token"] }, writable: true, restartRequired: false });
     const post = (body: unknown) => fetch(url + "api/settings", { method: "POST", headers: H, body: JSON.stringify(body) });
-    assert.equal((await post({ patch: { namespace: true } })).status, 200);
+    const saved = await post({ patch: { namespace: true } });
+    assert.equal(saved.status, 200);
+    assert.deepEqual(await saved.json(), { ok: true, applied: false, restartRequired: true });
     assert.deepEqual(written.at(-1), { namespace: true });
     assert.equal((await get()).restartRequired, true);
     assert.equal((await post({ patch: [] })).status, 400);
@@ -233,5 +235,32 @@ test("settings API: reads current values, saves a patch and flags a restart; inl
     assert.equal(((await (await fetch(inlineUrl + "api/settings")).json()) as { writable: boolean }).writable, false);
   } finally {
     await inline.close();
+  }
+});
+
+test("settings API: applies a saved patch live when the proxy can reload, and reports a failed reload", async () => {
+  let applies = 0;
+  let fail = false;
+  const manager = new UpstreamManager({}, { save: async () => {} });
+  const server = new ManageServer({
+    manager,
+    persistent: true,
+    uiDir: "/x",
+    settings: { read: async () => ({}), write: async () => {} },
+    applySettings: async () => {
+      applies++;
+      if (fail) throw new Error("bad hooks module");
+    },
+    catalog: async () => ({ entries: [], source: "none" }),
+  });
+  const url = await server.ensureStarted();
+  try {
+    const post = async () => (await (await fetch(url + "api/settings", { method: "POST", headers: H, body: JSON.stringify({ patch: { slim: false } }) })).json()) as Record<string, unknown>;
+    assert.deepEqual(await post(), { ok: true, applied: true, restartRequired: false });
+    fail = true;
+    assert.deepEqual(await post(), { ok: true, applied: false, restartRequired: true, error: "bad hooks module" });
+    assert.equal(applies, 2);
+  } finally {
+    await server.close();
   }
 });

@@ -168,7 +168,7 @@ export const SECTIONS: Section[] = [
   },
 ];
 
-export const RESTART_NOTE = "Saved. Restart better-mcp (reload your MCP client) for this to take effect.";
+export const RESTART_NOTE = "Saved, but not applied to the running proxy. Restart better-mcp (reload your MCP client) for it to take effect.";
 
 type Raw = Record<string, unknown>;
 
