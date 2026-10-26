@@ -4,7 +4,7 @@ import { createBuiltinTools, formatStatus, loginLinks } from "../builtin.service
 import type { ServerView } from "../manager.service.js";
 
 const view = (o: Partial<ServerView> & { name: string }): ServerView => ({
-  status: "connected", transport: "http", target: "t", tools: 3, resources: 0, prompts: 0, ...o,
+  status: "connected", transport: "http", target: "t", tools: 3, toolsTotal: 3, resources: 0, prompts: 0, ...o,
 });
 
 test("formatStatus: summarises each status", () => {
@@ -29,6 +29,10 @@ function setup(servers: ServerView[]) {
   const tools = createBuiltinTools({ manager, manageUrl: async () => "http://127.0.0.1:1/tok/", loginUrlWaitMs: 0, open: (u) => void opened.push(u) });
   return { tools: Object.fromEntries(tools.map((t) => [t.name, t])), opened, logins };
 }
+
+test("formatStatus: shows enabled of total when tools are disabled", () => {
+  assert.match(formatStatus([view({ name: "a", tools: 2, toolsTotal: 5 })]), /connected \(2 of 5 tools\)/);
+});
 
 test("manage_mcps: opens the URL and returns it with status; description lists pending logins", async () => {
   const { tools, opened } = setup([view({ name: "a" }), view({ name: "b", status: "needs_auth" })]);

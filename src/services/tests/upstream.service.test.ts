@@ -259,3 +259,17 @@ test("close: swallows errors from client.close() so shutdown can continue", asyn
   // Must NOT throw — the bootstrap shutdown loop relies on this.
   await u.close();
 });
+
+test("tools: disabledTools hides tools but allTools keeps the full catalog", async () => {
+  const client = fakeClient({
+    capabilities: { tools: {} },
+    tools: [{ name: "a", inputSchema: {} }, { name: "b", inputSchema: {} }],
+  });
+  const u = new UpstreamServer("s", client, fakeTransport);
+  await u.refresh();
+  u.disabledTools = new Set(["a"]);
+  assert.deepEqual(u.tools.map((t) => t.name), ["b"]);
+  assert.equal(u.allTools.length, 2);
+  await u.refresh();
+  assert.deepEqual(u.tools.map((t) => t.name), ["b"]);
+});

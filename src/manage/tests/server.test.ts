@@ -5,7 +5,19 @@ import type { UpstreamServer } from "../../services/upstream.service.js";
 import { ManageServer, isLocalHost } from "../server.js";
 
 function fake(name: string): UpstreamServer {
-  return { name, tools: [], resources: [], prompts: [], close: async () => {} } as unknown as UpstreamServer;
+  const tools = [{ server: name, name: "t0", description: "d", inputSchema: {} }];
+  const s = {
+    name,
+    allTools: tools,
+    disabledTools: new Set<string>(),
+    get tools() {
+      return s.allTools.filter((t) => !s.disabledTools.has(t.name));
+    },
+    resources: [],
+    prompts: [],
+    close: async () => {},
+  };
+  return s as unknown as UpstreamServer;
 }
 
 async function start(persistent = true) {
@@ -133,6 +145,23 @@ test("GET api/catalog returns the catalog", async () => {
   const { server, url } = await start();
   try {
     assert.deepEqual(await (await fetch(url + "api/catalog")).json(), { entries: [], source: "none" });
+  } finally {
+    await server.close();
+  }
+});
+
+test("tools API: list, disable and enable a server's tools; bad bodies are 400", async () => {
+  const { server, url, manager } = await start();
+  try {
+    const get = async () => (await (await fetch(url + "api/servers/a/tools")).json()) as { tools: { name: string; enabled: boolean }[] };
+    assert.deepEqual((await get()).tools.map((t) => [t.name, t.enabled]), [["t0", true]]);
+    const post = (body: unknown) => fetch(url + "api/servers/a/tools", { method: "POST", headers: H, body: JSON.stringify(body) });
+    assert.equal((await post({ tools: ["t0"], enabled: false })).status, 200);
+    assert.equal(manager.list()[0].tools, 0);
+    assert.equal((await get()).tools[0].enabled, false);
+    assert.equal((await post({ tools: "t0", enabled: true })).status, 400);
+    assert.equal((await post({ tools: ["zzz"], enabled: true })).status, 400);
+    assert.equal((await post({ tools: ["t0"], enabled: true })).status, 200);
   } finally {
     await server.close();
   }

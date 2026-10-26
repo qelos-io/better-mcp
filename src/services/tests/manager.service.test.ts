@@ -8,7 +8,11 @@ function fakeServer(name: string, tools = 2): UpstreamServer & { closed: boolean
   const s = {
     name,
     closed: false,
-    tools: Array.from({ length: tools }, (_, i) => ({ server: name, name: `t${i}`, inputSchema: {} })),
+    allTools: Array.from({ length: tools }, (_, i) => ({ server: name, name: `t${i}`, inputSchema: {} })),
+    disabledTools: new Set<string>(),
+    get tools() {
+      return s.allTools.filter((t) => !s.disabledTools.has(t.name));
+    },
     resources: [],
     prompts: [],
     async close() {
@@ -228,4 +232,36 @@ test("login: finishing is exposed after the browser returns, and hides the login
   release();
   await p;
   assert.equal(manager.list()[0].finishing, undefined);
+});
+
+test("setToolsEnabled: persists disabledTools, applies live, and re-applies on reconnect", async () => {
+  const h = harness({ a: { command: "x" } });
+  await h.manager.start();
+  let changes = 0;
+  h.manager.onChange(() => changes++);
+  await h.manager.setToolsEnabled("a", ["t0"], false);
+  assert.deepEqual(h.saved.at(-1)!.a.disabledTools, ["t0"]);
+  assert.deepEqual(h.manager.upstreams[0].tools.map((t) => t.name), ["t1"]);
+  assert.equal(h.manager.list()[0].tools, 1);
+  assert.equal(h.manager.list()[0].toolsTotal, 2);
+  assert.deepEqual(h.manager.listTools("a").map((t) => [t.name, t.enabled]), [["t0", false], ["t1", true]]);
+  assert.ok(changes > 0);
+
+  await h.manager.reconnect("a");
+  assert.deepEqual(h.manager.upstreams[0].tools.map((t) => t.name), ["t1"]);
+
+  await h.manager.setToolsEnabled("a", ["t0"], true);
+  assert.equal("disabledTools" in h.saved.at(-1)!.a, false);
+  assert.equal(h.manager.list()[0].tools, 2);
+});
+
+test("setToolsEnabled: unknown tools are rejected and a failed save rolls back", async () => {
+  const h = harness({ a: { command: "x" } });
+  await h.manager.start();
+  await assert.rejects(h.manager.setToolsEnabled("a", ["nope"], false), /unknown tool/);
+  const failing = harness({ a: { command: "x" } }, { failSave: true });
+  await failing.manager.start();
+  await assert.rejects(failing.manager.setToolsEnabled("a", ["t0"], false));
+  assert.equal(failing.manager.list()[0].tools, 2);
+  assert.deepEqual(failing.manager.listTools("a").map((t) => t.enabled), [true, true]);
 });

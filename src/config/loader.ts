@@ -99,6 +99,12 @@ export function validateServer(name: string, server: unknown): McpServerConfig {
   if (hasCommand === hasUrl) {
     throw new Error(`mcpServers.${name} must have exactly one of "command" or "url".`);
   }
+  if (
+    s.disabledTools !== undefined &&
+    (!Array.isArray(s.disabledTools) || s.disabledTools.some((t) => typeof t !== "string"))
+  ) {
+    throw new Error(`mcpServers.${name}.disabledTools must be an array of strings.`);
+  }
   return s;
 }
 

@@ -51,6 +51,16 @@ h1{margin:0;font-size:20px;font-weight:650;letter-spacing:-.01em}
 .authenticating .dot,.connecting .dot{animation:pulse 1.4s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.authenticating .dot,.connecting .dot{animation:none}}
+.tools{grid-column:2/-1;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.tools-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.tools-bar input{flex:1;min-width:160px;padding:6px 10px;font-size:13px}
+.tool{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;align-items:start;padding:6px 4px;border-radius:8px;cursor:pointer}
+.tool:hover{background:var(--hover)}
+.tool input{width:auto;margin:3px 0 0;accent-color:var(--accent)}
+.tool .tn{font:13px var(--mono);overflow-wrap:anywhere}
+.tool .td{grid-column:2;font-size:12px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tool.off .tn{color:var(--muted);text-decoration:line-through}
+.tools-list{max-height:360px;overflow:auto}
 .empty{padding:32px 16px;text-align:center;color:var(--muted);margin:0}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
@@ -136,10 +146,50 @@ function summarize(servers) {
 }
 function countsText(s) {
   if (s.status !== "connected") return "";
-  const bits = [s.tools + (s.tools === 1 ? " tool" : " tools")];
+  const bits = [s.tools === s.toolsTotal ? s.tools + (s.tools === 1 ? " tool" : " tools") : s.tools + " of " + s.toolsTotal + " tools"];
   if (s.resources) bits.push(s.resources + " resources");
   if (s.prompts) bits.push(s.prompts + " prompts");
   return bits.join(", ");
+}
+
+const openTools = new Set(), toolCache = {}, toolFilter = {};
+async function loadTools(name) {
+  try { toolCache[name] = (await api("servers/" + encodeURIComponent(name) + "/tools")).tools; } catch (e) { toast(e.message); }
+  renderServers();
+}
+async function setTools(name, tools, enabled) {
+  if (!tools.length) return;
+  try { await api("servers/" + encodeURIComponent(name) + "/tools", "POST", { tools, enabled }); } catch (e) { toast(e.message); }
+  await loadTools(name);
+  refresh(true);
+}
+function toolsPanel(s) {
+  const all = toolCache[s.name];
+  const box = el("div", { className: "tools" });
+  if (!all) { box.append(el("p", { className: "muted", textContent: "Loading tools…" })); return box; }
+  const q = (toolFilter[s.name] || "").toLowerCase();
+  const shown = all.filter((t) => !q || (t.name + " " + (t.description || "")).toLowerCase().includes(q));
+  const list = el("div", { className: "tools-list" });
+  const draw = (items) => list.replaceChildren(...(items.length ? items.map((t) => {
+    const cb = el("input", { type: "checkbox", checked: t.enabled });
+    cb.onchange = () => setTools(s.name, [t.name], cb.checked);
+    return el("label", { className: "tool" + (t.enabled ? "" : " off") }, cb, el("span", { className: "tn", textContent: t.name }), el("span", { className: "td", textContent: t.description || "" }));
+  }) : [el("p", { className: "muted", textContent: "No tools match." })]));
+  const search = el("input", { type: "search", placeholder: "Filter tools…", value: toolFilter[s.name] || "", "aria-label": "Filter tools" });
+  search.oninput = () => {
+    toolFilter[s.name] = search.value;
+    const f = search.value.toLowerCase();
+    draw(all.filter((t) => !f || (t.name + " " + (t.description || "")).toLowerCase().includes(f)));
+  };
+  const bulk = (label, enabled) => {
+    const b = el("button", { className: "btn", textContent: label });
+    b.onclick = () => setTools(s.name, all.filter((t) => t.enabled !== enabled && (!search.value || (t.name + " " + (t.description || "")).toLowerCase().includes(search.value.toLowerCase()))).map((t) => t.name), enabled);
+    return b;
+  };
+  box.append(el("div", { className: "tools-bar" }, search, bulk("Enable all", true), bulk("Disable all", false)));
+  draw(shown);
+  box.append(list);
+  return box;
 }
 
 function serverRow(s) {
@@ -155,6 +205,14 @@ function serverRow(s) {
     actions.append(el("a", { className: "btn primary", href: s.loginUrl, target: "_blank", rel: "noopener", textContent: "Open login page" }));
   else if (canLogin && s.status !== "authenticating")
     actions.append(act("Log in", () => api("servers/" + p + "/login", "POST"), "primary"));
+  if (s.status === "connected" && s.toolsTotal > 0) {
+    const tb = el("button", { className: "btn ghost", textContent: openTools.has(s.name) ? "Hide tools" : "Tools", "aria-expanded": String(openTools.has(s.name)) });
+    tb.onclick = () => {
+      if (openTools.has(s.name)) openTools.delete(s.name); else { openTools.add(s.name); loadTools(s.name); }
+      renderServers();
+    };
+    actions.append(tb);
+  }
   if (s.status === "connected" || s.status === "error") actions.append(act("Reconnect", () => api("servers/" + p + "/reconnect", "POST"), "ghost"));
   actions.append(act(s.status === "disabled" ? "Enable" : "Disable", () => api("servers/" + p + "/" + (s.status === "disabled" ? "enable" : "disable"), "POST"), "ghost"));
   const rm = el("button", { className: "btn ghost danger" + (armed === s.name ? " armed" : ""), textContent: armed === s.name ? "Confirm remove" : "Remove" });
@@ -174,6 +232,7 @@ function serverRow(s) {
   const row = el("div", { className: "row " + s.status }, el("span", { className: "dot", "aria-hidden": "true" }), main, actions);
   if (s.status === "authenticating")
     row.append(el("div", { className: "notice", textContent: s.finishing ? "Signed in. Connecting and loading tools, this can take a few seconds." : s.loginUrl ? "Finish signing in in your browser. If no window opened, use the login page link." : "Starting login…" }));
+  if (s.status === "connected" && openTools.has(s.name)) row.append(toolsPanel(s));
   if (s.error) {
     const box = el("div", { className: "err" }, el("div", { className: "msg", textContent: s.error }));
     if (s.error.length > 110) {

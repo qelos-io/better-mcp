@@ -228,7 +228,8 @@ See **[docs/popular-mcps.md](https://github.com/qelos-io/better-mcp/blob/main/do
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
       "env": { "FOO": "bar" },   // optional
       "cwd": "./somewhere",       // optional
-      "enabled": true              // optional, default true
+      "enabled": true,             // optional, default true
+      "disabledTools": ["delete_repo"] // optional: hide these tools and refuse to call them (also editable in the management app)
     }
   },
 

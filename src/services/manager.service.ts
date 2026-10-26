@@ -26,7 +26,10 @@ export interface ServerView {
   finishing?: boolean;
   transport: "http" | "stdio";
   target: string;
+  /** Tools exposed to clients (enabled ones). */
   tools: number;
+  /** Tools the server reports, including disabled ones. */
+  toolsTotal: number;
   resources: number;
   prompts: number;
 }
@@ -41,6 +44,12 @@ interface Entry {
   loginUrl?: string;
   finishing?: boolean;
   server?: UpstreamServer;
+}
+
+export interface ToolView {
+  name: string;
+  description?: string;
+  enabled: boolean;
 }
 
 export interface ManagerDeps {
@@ -104,9 +113,43 @@ export class UpstreamManager {
       transport: e.config.url ? "http" : "stdio",
       target: e.config.url ?? [e.config.command, ...(e.config.args ?? [])].join(" "),
       tools: e.server?.tools.length ?? 0,
+      toolsTotal: e.server?.allTools.length ?? 0,
       resources: e.server?.resources.length ?? 0,
       prompts: e.server?.prompts.length ?? 0,
     }));
+  }
+
+  /** Every tool a connected server reports, with its enabled flag. */
+  listTools(name: string): ToolView[] {
+    const e = this.require(name);
+    const off = new Set(e.raw.disabledTools ?? []);
+    return (e.server?.allTools ?? []).map((t) => ({ name: t.name, description: t.description, enabled: !off.has(t.name) }));
+  }
+
+  /** Enable or disable tools by their original names; persisted, applied live. */
+  async setToolsEnabled(name: string, tools: string[], enabled: boolean): Promise<void> {
+    const e = this.require(name);
+    const known = new Set((e.server?.allTools ?? []).map((t) => t.name));
+    const unknown = tools.filter((t) => !known.has(t));
+    if (unknown.length) throw new Error(`unknown tool(s) on "${name}": ${unknown.join(", ")}`);
+    const off = new Set(e.raw.disabledTools ?? []);
+    for (const t of tools) enabled ? off.delete(t) : off.add(t);
+    const prev = { raw: e.raw, config: e.config };
+    const disabledTools = off.size ? [...off].sort() : undefined;
+    e.raw = { ...e.raw, disabledTools };
+    e.config = { ...e.config, disabledTools };
+    if (!disabledTools) {
+      delete e.raw.disabledTools;
+      delete e.config.disabledTools;
+    }
+    try {
+      await this.persist();
+    } catch (err) {
+      Object.assign(e, prev);
+      throw err;
+    }
+    if (e.server) e.server.disabledTools = off;
+    this.sync();
   }
 
   needingLogin(): string[] {
@@ -237,6 +280,7 @@ export class UpstreamManager {
         await server.close();
         return;
       }
+      server.disabledTools = new Set(e.config.disabledTools ?? []);
       e.server = server;
       e.status = "connected";
     } catch (err) {

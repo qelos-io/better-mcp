@@ -13,6 +13,8 @@ export interface McpServerConfig {
   cwd?: string;
   /** If false, skip this server. Defaults to true. */
   enabled?: boolean;
+  /** Tool names (as the server reports them) to hide from clients and refuse to call. */
+  disabledTools?: string[];
   /**
    * Remote MCP server URL (Streamable HTTP). Required unless `command` is set.
    * Supports `${ENV_VAR}` interpolation.

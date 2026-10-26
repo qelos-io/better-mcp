@@ -51,7 +51,10 @@ export class UpstreamServer {
   client: Client;
   transport: Transport;
   name: string;
-  tools: UpstreamTool[] = [];
+  /** Every tool the server reports, including disabled ones. */
+  allTools: UpstreamTool[] = [];
+  /** Original tool names hidden from clients. */
+  disabledTools = new Set<string>();
   resources: UpstreamResource[] = [];
   prompts: UpstreamPrompt[] = [];
 
@@ -61,6 +64,11 @@ export class UpstreamServer {
     this.transport = transport;
   }
 
+  /** The tools clients may see and call. */
+  get tools(): UpstreamTool[] {
+    return this.disabledTools.size === 0 ? this.allTools : this.allTools.filter((t) => !this.disabledTools.has(t.name));
+  }
+
   /** Re-fetch the catalog. Called on connect; safe to call later. */
   async refresh(): Promise<void> {
     const caps = this.client.getServerCapabilities();
@@ -68,7 +76,7 @@ export class UpstreamServer {
     if (caps?.tools) {
       try {
         const res = await this.client.listTools();
-        this.tools = (res.tools ?? []).map((t) => ({
+        this.allTools = (res.tools ?? []).map((t) => ({
           server: this.name,
           name: t.name,
           description: t.description,
@@ -76,7 +84,7 @@ export class UpstreamServer {
         }));
       } catch (err) {
         warn(this.name, "listTools failed", err);
-        this.tools = [];
+        this.allTools = [];
       }
     }
 

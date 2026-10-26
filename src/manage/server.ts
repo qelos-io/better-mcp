@@ -8,7 +8,7 @@ import { renderManagePage } from "./page.js";
 export interface ManageDeps {
   manager: Pick<
     UpstreamManager,
-    "list" | "add" | "remove" | "setEnabled" | "reconnect" | "login" | "has"
+    "list" | "add" | "remove" | "setEnabled" | "listTools" | "setToolsEnabled" | "reconnect" | "login" | "has"
   >;
   catalog: () => Promise<Catalog>;
   /** False when the config can't be written back (inline JSON). */
@@ -127,6 +127,20 @@ export class ManageServer {
       if (typeof body.name !== "string") throw new Error("name is required");
       await manager.add(body.name, body.config);
       return [201, { ok: true }];
+    }
+    const t = /^servers\/([^/]+)\/tools$/.exec(api);
+    if (t) {
+      const name = decodeURIComponent(t[1]);
+      if (!manager.has(name)) throw new Error(`unknown server "${name}"`);
+      if (method === "GET") return [200, { tools: manager.listTools(name) }];
+      if (method === "POST") {
+        const body = (await readJson(req)) as { tools?: unknown; enabled?: unknown };
+        if (!Array.isArray(body.tools) || body.tools.some((x) => typeof x !== "string") || typeof body.enabled !== "boolean") {
+          throw new Error("body must be { tools: string[], enabled: boolean }");
+        }
+        await manager.setToolsEnabled(name, body.tools as string[], body.enabled);
+        return [200, { ok: true }];
+      }
     }
     const m = /^servers\/([^/]+)(?:\/(login|reconnect|enable|disable))?$/.exec(api);
     if (m) {
