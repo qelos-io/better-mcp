@@ -10,6 +10,7 @@ RUN npm ci
 
 COPY tsconfig.json ./
 COPY src ./src
+COPY ui ./ui
 RUN npm run build
 
 # ---------- runtime ----------
