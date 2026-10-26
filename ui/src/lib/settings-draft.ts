@@ -1,6 +1,7 @@
 import {
   SECTIONS,
   buildSectionValue,
+  type Section,
   readSection,
   setAt,
   type SectionState,
@@ -37,4 +38,13 @@ export function parseNumber(text: string): number | undefined {
   if (text.trim() === "") return undefined;
   const n = Number(text);
   return Number.isFinite(n) ? n : undefined;
+}
+
+/** True when the draft would store nothing: the section is at its defaults. */
+export function isDefaultDraft(sec: Section, draft: SectionState): boolean {
+  return buildSectionValue(sec, draft, undefined) === undefined;
+}
+
+export function defaultDraft(sec: Section): SectionState {
+  return { enabled: sec.defaultOn, values: sec.kind === "list" ? { list: [] } : {} };
 }

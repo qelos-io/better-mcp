@@ -1,8 +1,8 @@
 import { useEffect, useState } from "preact/hooks";
 import { RESTART_NOTE, SECTIONS, type Field, type Section } from "../../../src/manage/settings-schema";
 import { api } from "../api";
-import { diffPatch, initDrafts, listToText, parseNumber, textToList, type Drafts } from "../lib/settings-draft";
-import { toast } from "../toast";
+import { defaultDraft, diffPatch, initDrafts, isDefaultDraft, listToText, parseNumber, textToList, type Drafts } from "../lib/settings-draft";
+import { toast, toastError } from "../toast";
 
 interface Loaded {
   values: Record<string, unknown>;
@@ -27,7 +27,7 @@ function FieldInput(props: { field: Field; value: unknown; onChange: (v: unknown
     <div class="field">
       <label for={id}>{f.label}</label>
       {f.type === "string-list" ? (
-        <textarea id={id} class="short" spellcheck={false} value={listToText(value)} onInput={(e) => props.onChange(textToList(e.currentTarget.value))} />
+        <textarea id={id} class="short" spellcheck={false} placeholder={f.placeholder} value={listToText(value)} onInput={(e) => props.onChange(textToList(e.currentTarget.value))} />
       ) : f.type === "select" ? (
         <select id={id} value={String(value ?? f.default ?? "")} onChange={(e) => props.onChange(e.currentTarget.value)}>
           {f.options?.map((o) => <option value={o}>{o}</option>)}
@@ -47,15 +47,21 @@ function FieldInput(props: { field: Field; value: unknown; onChange: (v: unknown
   );
 }
 
-function SectionBlock(props: { section: Section; draft: Drafts[string]; disabled: boolean; onChange: (d: Drafts[string]) => void }) {
+function SectionBlock(props: { section: Section; draft: Drafts[string]; disabled: boolean; edited: boolean; onChange: (d: Drafts[string]) => void }) {
   const { section: s, draft } = props;
   const setValue = (key: string, v: unknown) => props.onChange({ ...draft, values: { ...draft.values, [key]: v } });
   return (
     <div class="setting">
       <div class="setting-head">
         <div>
-          <div class="name">{s.title}</div>
+          <div class="name">
+            {s.title}
+            {props.edited && <span class="edited">Edited</span>}
+          </div>
           <p class="muted">{s.summary}</p>
+          {!props.disabled && !isDefaultDraft(s, draft) && (
+            <button type="button" class="link" onClick={() => props.onChange(defaultDraft(s))}>Reset to defaults</button>
+          )}
         </div>
         {s.kind !== "list" && (
           <label class="switch">
@@ -93,16 +99,16 @@ export function SettingsPage({ onSaved }: { onSaved: () => void }) {
       setLoaded(next);
       setDrafts(initDrafts(next.values));
     } catch (e) {
-      toast((e as Error).message);
+      toastError(e);
     }
   };
   useEffect(() => void load(), []);
 
-  if (!loaded) return <p class="muted">Loading settings…</p>;
-  const patch = diffPatch(loaded.values, drafts);
+  const patch = loaded ? diffPatch(loaded.values, drafts) : {};
   const dirty = Object.keys(patch).length > 0;
 
   const save = async () => {
+    if (!dirty || saving) return;
     setSaving(true);
     try {
       const res = await api<{ applied: boolean; error?: string }>("settings", "POST", { patch });
@@ -110,10 +116,29 @@ export function SettingsPage({ onSaved }: { onSaved: () => void }) {
       await load();
       onSaved();
     } catch (e) {
-      toast((e as Error).message);
+      toastError(e);
     }
     setSaving(false);
   };
+
+  useEffect(() => {
+    if (!dirty) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        void save();
+      }
+    };
+    const onLeave = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("beforeunload", onLeave);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("beforeunload", onLeave);
+    };
+  });
+
+  if (!loaded) return <p class="muted" aria-busy="true">Loading settings…</p>;
 
   const groups = [...new Set(SECTIONS.map((s) => s.group))];
   return (
@@ -125,7 +150,7 @@ export function SettingsPage({ onSaved }: { onSaved: () => void }) {
           <h2>{g}</h2>
           <div class="list">
             {SECTIONS.filter((s) => s.group === g).map((s) => (
-              <SectionBlock key={s.id} section={s} draft={drafts[s.id]} disabled={!loaded.writable} onChange={(d) => setDrafts({ ...drafts, [s.id]: d })} />
+              <SectionBlock key={s.id} section={s} draft={drafts[s.id]} disabled={!loaded.writable} edited={s.id in patch} onChange={(d) => setDrafts({ ...drafts, [s.id]: d })} />
             ))}
           </div>
         </div>
@@ -134,7 +159,7 @@ export function SettingsPage({ onSaved }: { onSaved: () => void }) {
         <div class="savebar" role="region" aria-label="Unsaved changes">
           <span>{Object.keys(patch).length} unsaved {Object.keys(patch).length === 1 ? "change" : "changes"}</span>
           <button class="btn" onClick={() => setDrafts(initDrafts(loaded.values))}>Discard</button>
-          <button class="btn primary" disabled={saving} onClick={save}>{saving ? "Saving…" : "Save"}</button>
+          <button class="btn primary" disabled={saving} onClick={save}>{saving ? "Saving…" : "Save"}<kbd>⌘S</kbd></button>
         </div>
       )}
     </section>

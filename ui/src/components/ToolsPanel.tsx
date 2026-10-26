@@ -2,7 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 import type { ToolView } from "../../../src/manage/api-types";
 import { api, serverPath } from "../api";
 import { matchesFilter } from "../lib/format";
-import { toast } from "../toast";
+import { toastError } from "../toast";
 
 export function ToolsPanel({ server, onChange }: { server: string; onChange: () => void }) {
   const [tools, setTools] = useState<ToolView[] | null>(null);
@@ -12,7 +12,7 @@ export function ToolsPanel({ server, onChange }: { server: string; onChange: () 
     try {
       setTools((await api<{ tools: ToolView[] }>(serverPath(server, "tools"))).tools);
     } catch (e) {
-      toast((e as Error).message);
+      toastError(e);
     }
   };
   useEffect(() => void load(), [server]);
@@ -22,7 +22,7 @@ export function ToolsPanel({ server, onChange }: { server: string; onChange: () 
     try {
       await api(serverPath(server, "tools"), "POST", { tools: names, enabled });
     } catch (e) {
-      toast((e as Error).message);
+      toastError(e);
     }
     await load();
     onChange();

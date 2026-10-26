@@ -59,7 +59,7 @@ export const SECTIONS: Section[] = [
     kind: "options",
     defaultOn: true,
     fields: [
-      { key: "stripSchemaFields", label: "Schema fields to strip", help: 'One per line. Default: $schema, $id, $comment, title, examples, default.', type: "string-list" },
+      { key: "stripSchemaFields", label: "Schema fields to strip", help: "One per line. Leave empty for the defaults.", type: "string-list", placeholder: "$schema\n$id\n$comment\ntitle\nexamples\ndefault" },
       { key: "stripPropertyDescriptions", label: "Strip obvious property descriptions", help: "Drop a description that only paraphrases the property name.", type: "boolean", default: false },
       { key: "maxDescriptionLength", label: "Max description length", help: "Truncate tool descriptions to this many characters. 0 disables.", type: "number", default: 0, min: 0 },
     ],

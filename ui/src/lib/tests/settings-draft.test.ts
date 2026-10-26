@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { diffPatch, initDrafts, listToText, parseNumber, textToList } from "../settings-draft.js";
+import { SECTIONS } from "../../../../src/manage/settings-schema.js";
+import { defaultDraft, diffPatch, initDrafts, isDefaultDraft, listToText, parseNumber, textToList } from "../settings-draft.js";
 
 test("initDrafts + diffPatch: an untouched form produces no patch", () => {
   const values = { namespace: false, slim: { maxDescriptionLength: 80 }, redact: ["token"], dedup: true };
@@ -32,4 +33,13 @@ test("text helpers: lines to list and back, numbers parse or stay unset", () => 
   assert.equal(parseNumber(""), undefined);
   assert.equal(parseNumber("12"), 12);
   assert.equal(parseNumber("x"), undefined);
+});
+
+test("isDefaultDraft / defaultDraft: reset targets the stored-nothing state", () => {
+  for (const sec of SECTIONS) assert.equal(isDefaultDraft(sec, defaultDraft(sec)), true, sec.id);
+  const slim = SECTIONS.find((s) => s.id === "slim")!;
+  assert.equal(isDefaultDraft(slim, { enabled: false, values: {} }), false);
+  assert.equal(isDefaultDraft(slim, { enabled: true, values: { maxDescriptionLength: 50 } }), false);
+  const dedup = SECTIONS.find((s) => s.id === "dedup")!;
+  assert.equal(isDefaultDraft(dedup, { enabled: false, values: { ttlSeconds: 5 } }), true);
 });

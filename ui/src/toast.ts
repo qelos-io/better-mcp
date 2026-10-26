@@ -1,26 +1,36 @@
 import { useEffect, useState } from "preact/hooks";
 
-type Listener = (msg: string) => void;
-const listeners = new Set<Listener>();
-
-export function toast(msg: string): void {
-  for (const l of listeners) l(msg);
+export type ToastKind = "info" | "error";
+export interface ToastItem {
+  id: number;
+  text: string;
+  kind: ToastKind;
 }
 
-export function useToast(durationMs = 5000): string {
-  const [msg, setMsg] = useState("");
+let items: ToastItem[] = [];
+let nextId = 1;
+const listeners = new Set<(items: ToastItem[]) => void>();
+const emit = () => listeners.forEach((l) => l(items));
+
+export function dismissToast(id: number): void {
+  items = items.filter((t) => t.id !== id);
+  emit();
+}
+
+export function toast(text: string, kind: ToastKind = "info"): void {
+  const id = nextId++;
+  items = [...items.slice(-2), { id, text, kind }];
+  emit();
+  setTimeout(() => dismissToast(id), kind === "error" ? 9000 : 4000);
+}
+
+export const toastError = (e: unknown): void => toast(e instanceof Error ? e.message : String(e), "error");
+
+export function useToasts(): ToastItem[] {
+  const [list, setList] = useState(items);
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    const l: Listener = (m) => {
-      setMsg(m);
-      clearTimeout(timer);
-      timer = setTimeout(() => setMsg(""), durationMs);
-    };
-    listeners.add(l);
-    return () => {
-      listeners.delete(l);
-      clearTimeout(timer);
-    };
-  }, [durationMs]);
-  return msg;
+    listeners.add(setList);
+    return () => void listeners.delete(setList);
+  }, []);
+  return list;
 }
