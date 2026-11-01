@@ -3,6 +3,7 @@ import type { Catalog, ServerView } from "../../src/manage/api-types";
 import { ConnectionError, api } from "./api";
 import { AddServerDialog, type InstallRequest } from "./components/AddServerDialog";
 import { Icon } from "./components/Icon";
+import { InstallPage } from "./components/InstallPage";
 import { Marketplace, type CatalogState } from "./components/Marketplace";
 import { ServerList } from "./components/ServerList";
 import { SettingsPage } from "./components/SettingsPage";
@@ -19,6 +20,7 @@ interface State {
 const SUBTITLE: Record<Tab, string> = {
   servers: "The MCP servers every connected client can use.",
   market: "Community servers you can add in one step.",
+  install: "Add better-mcp to Claude, Cursor, Codex and other MCP clients.",
   settings: "How better-mcp routes calls and trims what your AI sees.",
 };
 
@@ -96,6 +98,8 @@ export function App() {
         <div id="panel" role="tabpanel" aria-labelledby={"tab-" + tab}>
           {tab === "settings" ? (
             <SettingsPage onSaved={refresh} />
+          ) : tab === "install" ? (
+            <InstallPage />
           ) : tab === "servers" ? (
             <ServerList servers={servers} loading={state === null} onChange={refresh} onAddCustom={addCustom} onBrowse={() => setTab("market")} />
           ) : (

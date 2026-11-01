@@ -297,3 +297,18 @@ test("tool API: detail with schema, and run returns what the runner gives back; 
     await server.close();
   }
 });
+
+test("GET /api/install returns the launch info", async () => {
+  const manager = new UpstreamManager({ a: { command: "x" } }, { connect: async (n) => fake(n), save: async () => {} });
+  await manager.start();
+  const info = { command: "npx", args: ["--config", "/c.json"], configPath: "/c.json", version: "1" };
+  const server = new ManageServer({ manager, persistent: true, uiDir: "/x", settings: { read: async () => ({}) }, install: () => info, catalog: async () => ({ entries: [], source: "none" }) });
+  const url = await server.ensureStarted();
+  try {
+    const res = await fetch(url + "api/install");
+    assert.deepEqual(await res.json(), info);
+  } finally {
+    await server.close();
+    await manager.close();
+  }
+});

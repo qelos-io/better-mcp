@@ -274,3 +274,9 @@ kbd{margin-left:6px;padding:1px 5px;border-radius:4px;border:1px solid #fff5;bac
   .bulk{margin-left:0}
 }
 @media (max-width:820px),(pointer:coarse){.btn,.chip,.icon-btn,.nav-item{min-height:44px}.icon-btn{width:44px}input,select{min-height:44px}.tool-row{padding:12px}kbd{display:none}}
+
+.install{display:grid;gap:14px}
+.install .chips{margin-bottom:0}
+.install .pane header p{margin:2px 0 0;font-size:13px}
+.install .pane-body pre{max-height:none}
+.install a.btn{text-decoration:none}

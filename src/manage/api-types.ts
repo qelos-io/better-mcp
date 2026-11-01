@@ -70,3 +70,12 @@ export interface RunToolResult {
   /** True when the pipeline changed the response. */
   changed: boolean;
 }
+
+/** How an MCP client should launch better-mcp to share this config. */
+export interface InstallInfo {
+  command: string;
+  args: string[];
+  /** Absolute config file path, when the config lives on disk. */
+  configPath?: string;
+  version: string;
+}

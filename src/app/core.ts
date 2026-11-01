@@ -5,7 +5,8 @@ import { saveServers } from "../config/writer.js";
 import { ConfigCredentialStore } from "../lib/credential-store.js";
 import { credentialsKey } from "../lib/oauth.js";
 import { enableEnvProxy } from "../lib/proxy-env.js";
-import { startupBanner } from "../lib/version.js";
+import { buildInstallArgs } from "../lib/install-args.js";
+import { VERSION, startupBanner } from "../lib/version.js";
 import { loadCatalog } from "../manage/catalog.js";
 import { resolveManageOptions } from "../manage/options.js";
 import { ManageServer } from "../manage/server.js";
@@ -70,6 +71,12 @@ export async function createCore(opts: { entryDir: string; forceManage?: boolean
             const fresh = await loadConfig({ entryDir: opts.entryDir });
             await runtime.apply(fresh.config, fresh.baseDir);
           },
+          install: () => ({
+            command: "npx",
+            args: ["-y", "@qelos/better-mcp@latest", ...buildInstallArgs(process.argv.slice(2), configPath)],
+            configPath,
+            version: VERSION,
+          }),
           runTool: (server, tool, args) => {
             const upstream = manager.connectedServer(server);
             if (!upstream) throw new Error(`"${server}" is not connected`);

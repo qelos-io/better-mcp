@@ -2,7 +2,7 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { UpstreamManager } from "../services/manager.service.js";
-import type { RunToolResult } from "./api-types.js";
+import type { InstallInfo, RunToolResult } from "./api-types.js";
 import type { Catalog } from "./catalog.js";
 import { readAllSettings } from "./settings-schema.js";
 import type { SettingsStore } from "./settings-store.js";
@@ -27,6 +27,8 @@ export interface ManageDeps {
   /** Re-reads the saved settings into the running proxy. Omit when changes need a restart. */
   applySettings?: () => Promise<void>;
   /** Run a tool through the middleware pipeline; absent when running tools isn't available. */
+  /** Launch command and args for MCP clients; absent when unknown. */
+  install?: () => InstallInfo;
   runTool?: (server: string, tool: string, args: Record<string, unknown>) => Promise<RunToolResult>;
 }
 
@@ -140,6 +142,10 @@ export class ManageServer {
     const { manager } = this.deps;
     if (method === "GET" && api === "state") {
       return [200, { servers: manager.list(), persistent: this.deps.persistent }];
+    }
+    if (method === "GET" && api === "install") {
+      if (!this.deps.install) throw new Error("install info is not available");
+      return [200, this.deps.install()];
     }
     if (api === "settings") {
       const { settings } = this.deps;
