@@ -1,4 +1,5 @@
 import { openBrowser } from "../lib/oauth.js";
+import { registerProcess } from "./daemon.js";
 import { createCore } from "./core.js";
 
 /**
@@ -7,15 +8,18 @@ import { createCore } from "./core.js";
  * Runs until interrupted.
  */
 export async function runApp(opts: { entryDir: string; open?: (url: string) => Promise<boolean> }): Promise<void> {
-  const { manager, manageServer } = await createCore({ ...opts, forceManage: true });
+  const core = await createCore({ ...opts, forceManage: true });
+  const { manager, manageServer } = core;
   const server = manageServer!;
   const url = await server.ensureStarted();
+  const unregister = await registerProcess(core, url, "app");
   process.stdout.write(`better-mcp app: ${url}\nPress Ctrl+C to stop.\n`);
   if (!(await (opts.open ?? openBrowser)(url))) {
     process.stderr.write("[better-mcp] could not open a browser; open the URL above.\n");
   }
 
   const shutdown = async () => {
+    await unregister();
     await server.close();
     await manager.close();
     process.exit(0);

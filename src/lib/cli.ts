@@ -4,7 +4,8 @@ import { startupBanner } from "./version.js";
 export type CliResult =
   | { action: "run" }
   | { action: "app" }
-  | { action: "tools"; sub: "call" | "describe" | "list"; tool?: string; filters?: string[]; args?: string; raw: boolean }
+  | { action: "tools"; sub: "call" | "describe" | "list"; tool?: string; filters?: string[]; args?: string; raw: boolean; verbose: boolean; daemon: boolean }
+  | { action: "daemon" }
   | { action: "exit"; code: number; stdout?: string; stderr?: string };
 
 /** Flags that take the next argument as their value, so that value is never read as a command. */
@@ -27,6 +28,9 @@ Usage
                               JSON object, or piped on stdin (or "-"). <tool> is the public
                               name (server__tool) or a bare name unique to one server.
                               --raw prints the upstream's response, skipping the middleware
+                              --verbose shows connection logs on stderr (hidden by default)
+                              --no-daemon connects in this process instead of the shared
+                              background helper (see "help tools")
   better-mcp version          Print the version and exit
   better-mcp help [tools]     Show this help (or the tools commands in detail) and exit
 
@@ -56,11 +60,15 @@ export function resolveCli(argv: string[]): CliResult {
   let wantHelp = false;
   let wantVersion = false;
   let raw = false;
+  let verbose = false;
+  let daemon = true;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--help" || a === "-h") wantHelp = true;
     else if (a === "--version" || a === "-v" || a === "-V") wantVersion = true;
     else if (a === "--raw") raw = true;
+    else if (a === "--verbose") verbose = true;
+    else if (a === "--no-daemon") daemon = false;
     else if (VALUE_FLAGS.has(a)) i++;
     else if (a === "-" || !a.startsWith("-")) positional.push(a);
   }
@@ -71,21 +79,22 @@ export function resolveCli(argv: string[]): CliResult {
   }
   if (wantVersion || command === "version") return { action: "exit", code: 0, stdout: startupBanner() + "\n" };
   if (command === "app") return { action: "app" };
+  if (command === "__daemon") return { action: "daemon" };
   if (command === "tools") {
     const sub = positional[1]?.toLowerCase();
     const usage = (msg: string): CliResult => ({ action: "exit", code: 2, stderr: `${msg}\n` });
     if (sub === "list" || sub === "ls") {
-      return { action: "tools", sub: "list", filters: positional.slice(2), raw };
+      return { action: "tools", sub: "list", filters: positional.slice(2), raw, verbose, daemon };
     }
     if (sub === "describe") {
       return positional.length !== 3
         ? usage("Usage: better-mcp tools describe <tool>")
-        : { action: "tools", sub, tool: positional[2], raw };
+        : { action: "tools", sub, tool: positional[2], raw, verbose, daemon };
     }
     if (sub === "call") {
       return !positional[2] || positional.length > 4
         ? usage("Usage: better-mcp tools call <tool> [json]")
-        : { action: "tools", sub, tool: positional[2], args: positional[3], raw };
+        : { action: "tools", sub, tool: positional[2], args: positional[3], raw, verbose, daemon };
     }
     return { action: "exit", code: 2, stderr: `Missing or unknown tools command.\n\n${toolsHelpText()}` };
   }

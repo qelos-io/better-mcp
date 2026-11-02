@@ -18,3 +18,20 @@ test("withLaunch: also replaces the binary after a pipe, and leaves other text a
   );
   assert.equal(withLaunch(`echo "better-mcp"`, launch), `echo "better-mcp"`);
 });
+
+import { cliLaunch, toolCallCommand } from "../cli-page.js";
+
+const info = { ...launch, configArgs: ["--config", "/my dir/mcp.json"], globalInstalled: false, namespace: true };
+
+test("cliLaunch: npx unless better-mcp is global", () => {
+  assert.equal(cliLaunch(info), info);
+  assert.deepEqual(cliLaunch({ ...info, globalInstalled: true }), { command: "better-mcp", args: ["--config", "/my dir/mcp.json"] });
+});
+
+test("toolCallCommand: namespaced name, quoted JSON args, global binary", () => {
+  assert.equal(
+    toolCallCommand({ ...info, globalInstalled: true }, "github", "get_issue", { number: 5 }),
+    `better-mcp --config '/my dir/mcp.json' tools call github__get_issue '{"number":5}'`,
+  );
+  assert.equal(toolCallCommand({ ...info, namespace: false, globalInstalled: true, configArgs: [] }, "github", "ping", {}), "better-mcp tools call ping '{}'");
+});

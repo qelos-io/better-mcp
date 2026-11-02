@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
+import { runDaemon } from "./app/daemon.js";
 import { runApp } from "./app/app.js";
 import { runTools } from "./app/tools.js";
 import { bootstrap } from "./app/bootstrap.js";
@@ -16,7 +17,7 @@ if (cli.action === "exit") {
 const entryDir = dirname(fileURLToPath(import.meta.url));
 
 if (cli.action === "tools") {
-  runTools({ entryDir, sub: cli.sub, tool: cli.tool, filters: cli.filters, args: cli.args, raw: cli.raw }).then(
+  runTools({ entryDir, sub: cli.sub, tool: cli.tool, filters: cli.filters, args: cli.args, raw: cli.raw, verbose: cli.verbose, daemon: cli.daemon }).then(
     (code) => process.exit(code),
     (err) => {
       process.stderr.write(`[better-mcp] ${err instanceof Error ? err.message : String(err)}\n`);
@@ -24,7 +25,7 @@ if (cli.action === "tools") {
     },
   );
 } else
-(cli.action === "app" ? runApp({ entryDir }) : bootstrap({ entryDir })).catch((err) => {
+(cli.action === "daemon" ? runDaemon({ entryDir }) : cli.action === "app" ? runApp({ entryDir }) : bootstrap({ entryDir })).catch((err) => {
   process.stderr.write(
     `[better-mcp] fatal: ${err instanceof Error ? err.stack ?? err.message : String(err)}\n`,
   );

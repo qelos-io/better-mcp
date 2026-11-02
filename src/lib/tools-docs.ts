@@ -49,6 +49,9 @@ export const TOOLS_COMMANDS: ToolsCommandDoc[] = [
 export const TOOLS_NAMING_NOTE =
   "<tool> is the public name (server__tool, or just the tool name when namespacing is off). A bare tool name works when only one server has it.";
 
+export const TOOLS_SPEED_NOTE =
+  "The first command starts a background helper that stays connected to your servers for 10 minutes after its last use, so later commands are fast. Connection logs are hidden; add --verbose to see them, or --no-daemon to connect in the command itself.";
+
 export function toolsHelpText(): string {
   const blocks = TOOLS_COMMANDS.map((c) =>
     [`  ${c.usage}`, `      ${c.summary}`, ...c.details.map((d) => `      ${d}`), "", ...c.examples.map((e) => `      $ ${e.cmd}`)].join("\n"),
@@ -60,6 +63,7 @@ Commands
 ${blocks.join("\n\n")}
 
 ${TOOLS_NAMING_NOTE}
+${TOOLS_SPEED_NOTE}
 Use -c <file> (before or after "tools") to pick a config. Manage servers in the app: better-mcp app
 `;
 }

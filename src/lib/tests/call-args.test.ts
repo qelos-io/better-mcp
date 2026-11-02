@@ -73,3 +73,9 @@ test("listToolNames: filters match name or description, case-insensitively, any-
   assert.deepEqual(listToolNames(svs, true, ["zzz"]), []);
   assert.equal(listToolNames(svs, true).length, 3);
 });
+
+test("parseCallArgs: accepts a BOM and a double-encoded object", () => {
+  assert.deepEqual(parseCallArgs('\uFEFF{"a":1}'), { a: 1 });
+  assert.deepEqual(parseCallArgs(JSON.stringify('{"a":1}')), { a: 1 });
+  assert.throws(() => parseCallArgs('"just text"'), /not valid JSON/);
+});

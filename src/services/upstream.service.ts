@@ -1,3 +1,4 @@
+import { isQuiet } from "../lib/quiet.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -173,6 +174,7 @@ async function connectStdio(name: string, cfg: McpServerConfig): Promise<Upstrea
     args: cfg.args ?? [],
     env,
     cwd: cfg.cwd,
+    stderr: isQuiet() ? "ignore" : "inherit",
   });
 
   const client = new Client(PROXY_CLIENT_INFO, { capabilities: {} });

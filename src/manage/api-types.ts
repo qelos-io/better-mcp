@@ -78,4 +78,10 @@ export interface InstallInfo {
   /** Absolute config file path, when the config lives on disk. */
   configPath?: string;
   version: string;
+  /** Args after the binary (`--config …`), without the npx prefix. */
+  configArgs: string[];
+  /** `better-mcp` is on PATH, so shell examples can use it directly. */
+  globalInstalled: boolean;
+  /** Tool names are `server__tool` when true. */
+  namespace: boolean;
 }

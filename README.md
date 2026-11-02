@@ -331,6 +331,12 @@ CLI commands (print and exit; they never start the stdio server):
   the name or description, keeping tools that match any. Arguments are a JSON object, inline or piped:
   `better-mcp tools call github__get_issue '{"number": 5}'` or
   `cat body.json | better-mcp tools call github__get_issue`.
+  Connection logs are hidden so stdout stays clean JSON (`--verbose` shows them).
+  The first command starts a background helper that keeps your servers
+  connected and exits after 10 idle minutes (`BETTER_MCP_DAEMON_IDLE_MS`), so
+  later commands take milliseconds; it restarts when the config file changes,
+  and a running `better-mcp app` is reused too. `--no-daemon` connects in the
+  command itself. The helper's log is in `~/.better-mcp/daemons/`.
   `better-mcp help tools` (or `tools --help`) documents all three; the same
   reference, with your launch command filled in, is the **Command line** page
   of the management app.

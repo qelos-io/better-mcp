@@ -49,21 +49,23 @@ test("resolveCli: an unknown command fails with usage on stderr", () => {
 });
 
 test("resolveCli: tools call takes a tool and optional inline JSON", () => {
-  assert.deepEqual(resolveCli(["tools", "call", "s__t"]), { action: "tools", sub: "call", tool: "s__t", args: undefined, raw: false });
+  assert.deepEqual(resolveCli(["tools", "call", "s__t"]), { action: "tools", sub: "call", tool: "s__t", args: undefined, raw: false, verbose: false, daemon: true });
   assert.deepEqual(resolveCli(["-c", "x.json", "tools", "call", "t", '{"a":5}', "--raw"]), {
     action: "tools",
     sub: "call",
     tool: "t",
     args: '{"a":5}',
     raw: true,
+    verbose: false,
+    daemon: true,
   });
   assert.equal((resolveCli(["tools", "call", "t", "-"]) as { args: string }).args, "-");
 });
 
 test("resolveCli: tools describe and list", () => {
-  assert.deepEqual(resolveCli(["tools", "describe", "t"]), { action: "tools", sub: "describe", tool: "t", raw: false });
-  assert.deepEqual(resolveCli(["tools", "list"]), { action: "tools", sub: "list", filters: [], raw: false });
-  assert.deepEqual(resolveCli(["tools", "ls", "git", "issue"]), { action: "tools", sub: "list", filters: ["git", "issue"], raw: false });
+  assert.deepEqual(resolveCli(["tools", "describe", "t"]), { action: "tools", sub: "describe", tool: "t", raw: false, verbose: false, daemon: true });
+  assert.deepEqual(resolveCli(["tools", "list"]), { action: "tools", sub: "list", filters: [], raw: false, verbose: false, daemon: true });
+  assert.deepEqual(resolveCli(["tools", "ls", "git", "issue"]), { action: "tools", sub: "list", filters: ["git", "issue"], raw: false, verbose: false, daemon: true });
 });
 
 test("resolveCli: malformed tools commands are usage errors", () => {
@@ -88,4 +90,12 @@ test("resolveCli: bare tools shows the tools help with exit 2", () => {
   const r = resolveCli(["tools"]) as { code: number; stderr: string };
   assert.equal(r.code, 2);
   assert.match(r.stderr, /better-mcp tools ls/);
+});
+
+test("resolveCli: --verbose and --no-daemon are tools flags; __daemon is internal", () => {
+  const r = resolveCli(["tools", "ls", "--verbose", "--no-daemon"]) as { verbose: boolean; daemon: boolean; filters: string[] };
+  assert.equal(r.verbose, true);
+  assert.equal(r.daemon, false);
+  assert.deepEqual(r.filters, []);
+  assert.deepEqual(resolveCli(["__daemon", "-c", "x.json"]), { action: "daemon" });
 });

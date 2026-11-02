@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { RunToolResult, ToolDetail } from "../../../src/manage/api-types";
+import type { InstallInfo } from "../../../src/manage/api-types";
 import { api, serverPath } from "../api";
+import { toolCallCommand } from "../lib/cli-page";
 import { byteSize, formatBytes, reduction, viewResult } from "../lib/result";
 import { buildArgs, fieldsFromSchema, initialValues, type FieldValues, type SchemaField } from "../lib/schema-form";
 import { toast, toastError } from "../toast";
@@ -74,11 +76,16 @@ export function ToolRunner({ server, tool, onBack }: { server: string; tool: str
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<RunToolResult | null>(null);
+  const [info, setInfo] = useState<InstallInfo | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (result) resultRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [result]);
+
+  useEffect(() => {
+    api<InstallInfo>("install").then(setInfo, () => {});
+  }, []);
 
   const fields = useMemo(() => (detail ? fieldsFromSchema(detail.inputSchema) : null), [detail]);
 
@@ -133,6 +140,19 @@ export function ToolRunner({ server, tool, onBack }: { server: string; tool: str
     setMode(next);
   };
 
+  const cliLine = useMemo(() => {
+    if (!info) return "";
+    let args: Record<string, unknown> = {};
+    try {
+      if (mode === "form" && fields) args = buildArgs(fields, values).args;
+      else {
+        const parsed = JSON.parse(jsonText || "{}");
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) args = parsed;
+      }
+    } catch {}
+    return toolCallCommand(info, server, tool, args);
+  }, [info, server, tool, mode, fields, values, jsonText]);
+
   const rawBytes = byteSize(result?.raw);
   const outBytes = byteSize(result?.processed);
   const ann = detail?.annotations ?? {};
@@ -180,6 +200,15 @@ export function ToolRunner({ server, tool, onBack }: { server: string; tool: str
               <span class="muted small">Runs the tool for real, with your credentials, through the same middleware your client uses.</span>
             </div>
           </div>
+          {cliLine && (
+            <div class="cli-example">
+              <span class="muted small">Test it in your terminal:</span>
+              <div class="cli-line">
+                <pre>{cliLine}</pre>
+                <button class="btn" aria-label="Copy command" onClick={() => navigator.clipboard.writeText(cliLine).then(() => toast("Copied."), toastError)}><Icon name="copy" size={15} /></button>
+              </div>
+            </div>
+          )}
           {running && <div class="running" aria-busy="true"><div class="bone w70" /><div class="bone w40" /></div>}
           {result && (
             <div class="result" aria-live="polite" ref={resultRef}>

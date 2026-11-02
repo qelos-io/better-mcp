@@ -1,12 +1,16 @@
 const NS_SEPARATOR = "__";
 
-/** Parse the JSON-object arguments for `better-mcp call`; empty input means no arguments. */
+/**
+ * Parse the JSON-object arguments for `better-mcp call`; empty input means no arguments.
+ * Tolerates a leading BOM and a double-encoded payload (a JSON string that itself holds the object).
+ */
 export function parseCallArgs(text: string | undefined): Record<string, unknown> {
-  const src = (text ?? "").trim();
+  const src = (text ?? "").replace(/^\uFEFF/, "").trim();
   if (!src) return {};
   let value: unknown;
   try {
     value = JSON.parse(src);
+    for (let i = 0; i < 2 && typeof value === "string"; i++) value = JSON.parse(value);
   } catch (e) {
     throw new Error(`arguments are not valid JSON: ${e instanceof Error ? e.message : String(e)}`);
   }

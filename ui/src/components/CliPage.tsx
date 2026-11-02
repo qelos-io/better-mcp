@@ -2,7 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 import type { InstallInfo } from "../../../src/manage/api-types";
 import { TOOLS_COMMANDS, TOOLS_NAMING_NOTE } from "../../../src/lib/tools-docs";
 import { api } from "../api";
-import { withLaunch } from "../lib/cli-page";
+import { cliLaunch, withLaunch } from "../lib/cli-page";
 import { toast, toastError } from "../toast";
 import { Icon } from "./Icon";
 
@@ -33,7 +33,7 @@ export function CliPage() {
           <div class="pane-body">
             {c.details.map((d) => <p class="muted" key={d}>{d}</p>)}
             {c.examples.map((e) => {
-              const line = withLaunch(e.cmd, info);
+              const line = withLaunch(e.cmd, cliLaunch(info));
               return (
                 <div class="cli-example" key={e.cmd}>
                   <span class="muted">{e.note}</span>

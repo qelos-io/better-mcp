@@ -29,6 +29,8 @@ export interface ManageDeps {
   /** Run a tool through the middleware pipeline; absent when running tools isn't available. */
   /** Launch command and args for MCP clients; absent when unknown. */
   install?: () => InstallInfo;
+  /** Called for each authenticated request; the background helper uses it to track idleness. */
+  onRequest?: () => void;
   runTool?: (server: string, tool: string, args: Record<string, unknown>) => Promise<RunToolResult>;
 }
 
@@ -113,6 +115,7 @@ export class ManageServer {
     const path = new URL(req.url ?? "/", "http://localhost").pathname;
     const [, token = "", ...rest] = path.split("/");
     if (!tokenMatches(token, this.token)) return void sendJson(res, 404, { error: "not found" });
+    this.deps.onRequest?.();
 
     const method = req.method ?? "GET";
     const sub = rest.join("/");

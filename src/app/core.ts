@@ -5,6 +5,7 @@ import { saveServers } from "../config/writer.js";
 import { ConfigCredentialStore } from "../lib/credential-store.js";
 import { credentialsKey } from "../lib/oauth.js";
 import { enableEnvProxy } from "../lib/proxy-env.js";
+import { isOnPath } from "../lib/global-install.js";
 import { buildInstallArgs } from "../lib/install-args.js";
 import { VERSION, startupBanner } from "../lib/version.js";
 import { loadCatalog } from "../manage/catalog.js";
@@ -26,7 +27,7 @@ export interface Core extends LoadResult {
  * Everything both modes share: load the config, connect the upstream servers,
  * and build the live settings and the management server (not yet listening).
  */
-export async function createCore(opts: { entryDir: string; forceManage?: boolean }): Promise<Core> {
+export async function createCore(opts: { entryDir: string; forceManage?: boolean; onRequest?: () => void }): Promise<Core> {
   process.stderr.write(`[better-mcp] ${startupBanner()}\n`);
   if (enableEnvProxy()) process.stderr.write("[better-mcp] using proxy from environment\n");
   const loaded = await loadConfig({ entryDir: opts.entryDir });
@@ -71,12 +72,19 @@ export async function createCore(opts: { entryDir: string; forceManage?: boolean
             const fresh = await loadConfig({ entryDir: opts.entryDir });
             await runtime.apply(fresh.config, fresh.baseDir);
           },
-          install: () => ({
-            command: "npx",
-            args: ["-y", "@qelos/better-mcp@latest", ...buildInstallArgs(process.argv.slice(2), configPath)],
-            configPath,
-            version: VERSION,
-          }),
+          install: () => {
+            const configArgs = buildInstallArgs(process.argv.slice(2), configPath);
+            return {
+              command: "npx",
+              args: ["-y", "@qelos/better-mcp@latest", ...configArgs],
+              configPath,
+              version: VERSION,
+              configArgs,
+              globalInstalled: isOnPath("better-mcp"),
+              namespace: runtime.namespace,
+            };
+          },
+          onRequest: opts.onRequest,
           runTool: (server, tool, args) => {
             const upstream = manager.connectedServer(server);
             if (!upstream) throw new Error(`"${server}" is not connected`);
