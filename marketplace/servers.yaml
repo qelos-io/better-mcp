@@ -287,16 +287,30 @@ servers:
       env:
         ELEVENLABS_API_KEY: "${ELEVENLABS_API_KEY}"
 
-  - id: figma
-    name: Figma
-    description: Read Figma designs and components to generate code from them.
+  - id: figma-desktop
+    name: Figma (desktop app)
+    description: Official Figma Dev Mode MCP server, run locally by the Figma desktop app. No login needed.
     category: Creative
     logo: https://cdn.simpleicons.org/figma
     homepage: https://help.figma.com/hc/en-us/articles/32132100833559
-    tags: [design, ui, oauth]
-    setup: Browser login on first run (OAuth).
+    tags: [design, ui, local]
+    setup: Open the Figma desktop app, open a Design file, and enable the Dev Mode MCP server (Preferences → Enable Dev Mode MCP Server). Keep the app running.
     config:
-      url: https://mcp.figma.com/mcp
+      url: http://127.0.0.1:3845/mcp
+
+  - id: figma-community
+    name: Figma (community)
+    description: Community figma-developer-mcp server. Works without the desktop app, using a personal access token.
+    category: Creative
+    logo: https://cdn.simpleicons.org/figma
+    homepage: https://github.com/GLips/Figma-Context-MCP
+    tags: [design, ui]
+    setup: Set FIGMA_API_KEY to a read-only personal access token (Figma → Settings → Security). Community package, not official; Figma's hosted MCP server only accepts approved OAuth clients.
+    config:
+      command: npx
+      args: ["-y", "figma-developer-mcp", "--stdio"]
+      env:
+        FIGMA_API_KEY: "${FIGMA_API_KEY}"
 
   - id: supabase
     name: Supabase

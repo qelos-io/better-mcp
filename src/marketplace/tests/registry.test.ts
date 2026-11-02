@@ -28,6 +28,8 @@ test("validateEntry: config needs exactly one of command/url", () => {
   assert.ok(validateEntry({ ...good, config: {} }).some((e) => /exactly one/.test(e)));
   assert.ok(validateEntry({ ...good, config: { command: "x", url: "https://y" } }).some((e) => /exactly one/.test(e)));
   assert.ok(validateEntry({ ...good, config: { url: "http://y" } }).some((e) => /https/.test(e)));
+  assert.deepEqual(validateEntry({ ...good, config: { url: "http://127.0.0.1:3845/mcp" } }), []);
+  assert.ok(validateEntry({ ...good, config: { url: "http://127.0.0.1.evil.com/x" } }).some((e) => /https/.test(e)));
 });
 
 test("validateEntry: env/args/tags type checks", () => {

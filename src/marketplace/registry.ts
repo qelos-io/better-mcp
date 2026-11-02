@@ -61,7 +61,7 @@ export function validateEntry(raw: unknown): string[] {
   const hasCmd = typeof cfg.command === "string" && cfg.command !== "";
   const hasUrl = typeof cfg.url === "string" && cfg.url !== "";
   if (hasCmd === hasUrl) errs.push("config needs exactly one of command or url");
-  if (hasUrl && !/^https:\/\/|^\$\{/.test(cfg.url as string)) errs.push("config.url must be https");
+  if (hasUrl && !/^https:\/\/|^http:\/\/(127\.0\.0\.1|localhost)[:/]|^\$\{/.test(cfg.url as string)) errs.push("config.url must be https (or http on localhost)");
   if (cfg.args !== undefined && !(Array.isArray(cfg.args) && cfg.args.every((a) => typeof a === "string"))) {
     errs.push("config.args must be a list of strings");
   }

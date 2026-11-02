@@ -261,26 +261,56 @@
     }
   },
   {
-    "id": "figma",
-    "name": "Figma",
-    "description": "Read Figma designs and components to generate code from them.",
+    "id": "figma-community",
+    "name": "Figma (community)",
+    "description": "Community figma-developer-mcp server. Works without the desktop app, using a personal access token.",
+    "category": "Creative",
+    "homepage": "https://github.com/GLips/Figma-Context-MCP",
+    "logo": "https://cdn.simpleicons.org/figma",
+    "tags": [
+      "design",
+      "ui"
+    ],
+    "setup": "Set FIGMA_API_KEY to a read-only personal access token (Figma → Settings → Security). Community package, not official; Figma's hosted MCP server only accepts approved OAuth clients.",
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "figma-developer-mcp",
+        "--stdio"
+      ],
+      "env": {
+        "FIGMA_API_KEY": "${FIGMA_API_KEY}"
+      }
+    },
+    "install": {
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"figma-community\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"figma-developer-mcp\",\n        \"--stdio\"\n      ],\n      \"env\": {\n        \"FIGMA_API_KEY\": \"${FIGMA_API_KEY}\"\n      }\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=figma-community&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImZpZ21hLWRldmVsb3Blci1tY3AiLCItLXN0ZGlvIl0sImVudiI6eyJGSUdNQV9BUElfS0VZIjoiJHtGSUdNQV9BUElfS0VZfSJ9fQ%3D%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22figma-community%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22figma-developer-mcp%22%2C%22--stdio%22%5D%2C%22env%22%3A%7B%22FIGMA_API_KEY%22%3A%22%24%7BFIGMA_API_KEY%7D%22%7D%7D",
+      "claudeCode": "claude mcp add-json figma-community '{\"command\":\"npx\",\"args\":[\"-y\",\"figma-developer-mcp\",\"--stdio\"],\"env\":{\"FIGMA_API_KEY\":\"${FIGMA_API_KEY}\"}}'"
+    }
+  },
+  {
+    "id": "figma-desktop",
+    "name": "Figma (desktop app)",
+    "description": "Official Figma Dev Mode MCP server, run locally by the Figma desktop app. No login needed.",
     "category": "Creative",
     "homepage": "https://help.figma.com/hc/en-us/articles/32132100833559",
     "logo": "https://cdn.simpleicons.org/figma",
     "tags": [
       "design",
       "ui",
-      "oauth"
+      "local"
     ],
-    "setup": "Browser login on first run (OAuth).",
+    "setup": "Open the Figma desktop app, open a Design file, and enable the Dev Mode MCP server (Preferences → Enable Dev Mode MCP Server). Keep the app running.",
     "config": {
-      "url": "https://mcp.figma.com/mcp"
+      "url": "http://127.0.0.1:3845/mcp"
     },
     "install": {
-      "mcpServers": "{\n  \"mcpServers\": {\n    \"figma\": {\n      \"url\": \"https://mcp.figma.com/mcp\"\n    }\n  }\n}",
-      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=figma&config=eyJ1cmwiOiJodHRwczovL21jcC5maWdtYS5jb20vbWNwIn0%3D",
-      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22figma%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.figma.com%2Fmcp%22%7D",
-      "claudeCode": "claude mcp add-json figma '{\"url\":\"https://mcp.figma.com/mcp\"}'"
+      "mcpServers": "{\n  \"mcpServers\": {\n    \"figma-desktop\": {\n      \"url\": \"http://127.0.0.1:3845/mcp\"\n    }\n  }\n}",
+      "cursor": "cursor://anysphere.cursor-deeplink/mcp/install?name=figma-desktop&config=eyJ1cmwiOiJodHRwOi8vMTI3LjAuMC4xOjM4NDUvbWNwIn0%3D",
+      "vscode": "vscode:mcp/install?%7B%22name%22%3A%22figma-desktop%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22http%3A%2F%2F127.0.0.1%3A3845%2Fmcp%22%7D",
+      "claudeCode": "claude mcp add-json figma-desktop '{\"url\":\"http://127.0.0.1:3845/mcp\"}'"
     }
   },
   {
