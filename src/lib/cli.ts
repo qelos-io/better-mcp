@@ -1,8 +1,10 @@
+import { toolsHelpText } from "./tools-docs.js";
 import { startupBanner } from "./version.js";
 
 export type CliResult =
   | { action: "run" }
   | { action: "app" }
+  | { action: "tools"; sub: "call" | "describe" | "list"; tool?: string; filters?: string[]; args?: string; raw: boolean }
   | { action: "exit"; code: number; stdout?: string; stderr?: string };
 
 /** Flags that take the next argument as their value, so that value is never read as a command. */
@@ -14,8 +16,19 @@ export function helpText(): string {
 Usage
   better-mcp [options]        Start the proxy on stdio (what MCP clients run)
   better-mcp app [-c file]    Open only the management app for a config file (no stdio)
+  better-mcp tools ls [filters...]
+                              List the tools you can call (public names); filters are
+                              case-insensitive substrings of the name or description,
+                              a tool is kept when it matches any (alias: list)
+  better-mcp tools describe <tool>
+                              Print a tool's description and input schema as JSON
+  better-mcp tools call <tool> [json]
+                              Run one tool and print its result as JSON. Arguments are a
+                              JSON object, or piped on stdin (or "-"). <tool> is the public
+                              name (server__tool) or a bare name unique to one server.
+                              --raw prints the upstream's response, skipping the middleware
   better-mcp version          Print the version and exit
-  better-mcp help             Show this help and exit
+  better-mcp help [tools]     Show this help (or the tools commands in detail) and exit
 
 Options
   -c, --config <path>         Config file (default: ./mcp.json, then next to the package)
@@ -42,17 +55,40 @@ export function resolveCli(argv: string[]): CliResult {
   const positional: string[] = [];
   let wantHelp = false;
   let wantVersion = false;
+  let raw = false;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--help" || a === "-h") wantHelp = true;
     else if (a === "--version" || a === "-v" || a === "-V") wantVersion = true;
+    else if (a === "--raw") raw = true;
     else if (VALUE_FLAGS.has(a)) i++;
-    else if (!a.startsWith("-")) positional.push(a);
+    else if (a === "-" || !a.startsWith("-")) positional.push(a);
   }
   const command = positional[0]?.toLowerCase();
-  if (wantHelp || command === "help") return { action: "exit", code: 0, stdout: helpText() };
+  const topic = command === "help" ? positional[1]?.toLowerCase() : command;
+  if (wantHelp || command === "help") {
+    return { action: "exit", code: 0, stdout: topic === "tools" ? toolsHelpText() : helpText() };
+  }
   if (wantVersion || command === "version") return { action: "exit", code: 0, stdout: startupBanner() + "\n" };
   if (command === "app") return { action: "app" };
+  if (command === "tools") {
+    const sub = positional[1]?.toLowerCase();
+    const usage = (msg: string): CliResult => ({ action: "exit", code: 2, stderr: `${msg}\n` });
+    if (sub === "list" || sub === "ls") {
+      return { action: "tools", sub: "list", filters: positional.slice(2), raw };
+    }
+    if (sub === "describe") {
+      return positional.length !== 3
+        ? usage("Usage: better-mcp tools describe <tool>")
+        : { action: "tools", sub, tool: positional[2], raw };
+    }
+    if (sub === "call") {
+      return !positional[2] || positional.length > 4
+        ? usage("Usage: better-mcp tools call <tool> [json]")
+        : { action: "tools", sub, tool: positional[2], args: positional[3], raw };
+    }
+    return { action: "exit", code: 2, stderr: `Missing or unknown tools command.\n\n${toolsHelpText()}` };
+  }
   if (command) {
     return { action: "exit", code: 2, stderr: `Unknown command "${positional[0]}".\n\n${helpText()}` };
   }

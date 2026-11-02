@@ -47,3 +47,45 @@ test("resolveCli: an unknown command fails with usage on stderr", () => {
   assert.equal((r as { code: number }).code, 2);
   assert.match((r as { stderr: string }).stderr, /Unknown command "versoin"/);
 });
+
+test("resolveCli: tools call takes a tool and optional inline JSON", () => {
+  assert.deepEqual(resolveCli(["tools", "call", "s__t"]), { action: "tools", sub: "call", tool: "s__t", args: undefined, raw: false });
+  assert.deepEqual(resolveCli(["-c", "x.json", "tools", "call", "t", '{"a":5}', "--raw"]), {
+    action: "tools",
+    sub: "call",
+    tool: "t",
+    args: '{"a":5}',
+    raw: true,
+  });
+  assert.equal((resolveCli(["tools", "call", "t", "-"]) as { args: string }).args, "-");
+});
+
+test("resolveCli: tools describe and list", () => {
+  assert.deepEqual(resolveCli(["tools", "describe", "t"]), { action: "tools", sub: "describe", tool: "t", raw: false });
+  assert.deepEqual(resolveCli(["tools", "list"]), { action: "tools", sub: "list", filters: [], raw: false });
+  assert.deepEqual(resolveCli(["tools", "ls", "git", "issue"]), { action: "tools", sub: "list", filters: ["git", "issue"], raw: false });
+});
+
+test("resolveCli: malformed tools commands are usage errors", () => {
+  for (const argv of [["tools"], ["tools", "nope"], ["tools", "call"], ["tools", "describe"], ["tools", "call", "a", "{}", "x"]]) {
+    const r = resolveCli(argv);
+    assert.equal(r.action, "exit");
+    assert.equal((r as { code: number }).code, 2);
+  }
+});
+
+test("resolveCli: help tools and tools --help print the detailed tools help", () => {
+  for (const argv of [["help", "tools"], ["tools", "--help"], ["tools", "call", "-h"]]) {
+    const r = resolveCli(argv) as { code: number; stdout: string };
+    assert.equal(r.code, 0);
+    assert.match(r.stdout, /better-mcp tools call <tool>/);
+    assert.match(r.stdout, /better-mcp tools describe <tool>/);
+  }
+  assert.equal((resolveCli(["help"]) as { stdout: string }).stdout, helpText());
+});
+
+test("resolveCli: bare tools shows the tools help with exit 2", () => {
+  const r = resolveCli(["tools"]) as { code: number; stderr: string };
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /better-mcp tools ls/);
+});

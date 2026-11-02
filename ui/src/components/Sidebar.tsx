@@ -1,10 +1,10 @@
 import { THEMES, type ThemeChoice } from "../lib/theme";
 import { Icon, type IconName } from "./Icon";
 
-export type Tab = "servers" | "market" | "install" | "settings";
-export const TABS: Tab[] = ["servers", "market", "install", "settings"];
-export const TAB_LABEL: Record<Tab, string> = { servers: "Servers", market: "Marketplace", install: "Installation", settings: "Settings" };
-const TAB_ICON: Record<Tab, IconName> = { servers: "servers", market: "market", install: "install", settings: "settings" };
+export type Tab = "servers" | "market" | "install" | "cli" | "settings";
+export const TABS: Tab[] = ["servers", "market", "install", "cli", "settings"];
+export const TAB_LABEL: Record<Tab, string> = { servers: "Servers", market: "Marketplace", install: "Installation", cli: "Command line", settings: "Settings" };
+const TAB_ICON: Record<Tab, IconName> = { servers: "servers", market: "market", install: "install", cli: "tools", settings: "settings" };
 const THEME_ICON: Record<ThemeChoice, IconName> = { light: "sun", dark: "moon", system: "monitor" };
 
 export function Sidebar(props: {

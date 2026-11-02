@@ -322,6 +322,18 @@ CLI commands (print and exit; they never start the stdio server):
 - `better-mcp version` (or `--version`, `-v`) — print the version, Node and platform.
 - `better-mcp help` (or `--help`, `-h`) — usage, options and environment variables.
 
+- `better-mcp tools ls [filters] | describe <tool> | call <tool> [json]` — use tools
+  from the shell. `describe` prints the description and input schema; `call`
+  runs the tool and prints its result as JSON (after the middleware pipeline;
+  `--raw` prints the upstream's own response) and exits 1 on a tool error.
+  `<tool>` is the public name (`server__tool`) or a bare name unique to one
+  server. `ls` (alias `list`) takes optional filters, case-insensitive substrings of
+  the name or description, keeping tools that match any. Arguments are a JSON object, inline or piped:
+  `better-mcp tools call github__get_issue '{"number": 5}'` or
+  `cat body.json | better-mcp tools call github__get_issue`.
+  `better-mcp help tools` (or `tools --help`) documents all three; the same
+  reference, with your launch command filled in, is the **Command line** page
+  of the management app.
 - `better-mcp app [-c file.json]` — open **only** the management app for that
   config (installs, logins, tool toggles, settings), with no stdio server and no
   HTTP listener, so you can manage `mcp.json` outside any agent client. It
