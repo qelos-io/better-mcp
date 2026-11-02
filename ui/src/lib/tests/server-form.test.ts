@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildConfig, emptyForm, formFromConfig, isValidUrl, mergeConfig, parsePairs, validateName } from "../server-form.js";
+import { buildConfig, emptyForm, formFromConfig, isValidUrl, listErrors, mergeConfig, parsePairs, validateName } from "../server-form.js";
 
 test("validateName: required, charset, no double underscore, unique", () => {
   assert.equal(validateName("github", ["a"]), null);
@@ -63,4 +63,9 @@ test("marketplace round trip: every bundled catalog entry survives form edit unc
     assert.deepEqual(built.errors, {}, e.id);
     assert.deepEqual(mergeConfig(e.config, built.config!), e.config, e.id);
   }
+});
+
+test("listErrors drops cleared (undefined) entries", () => {
+  assert.deepEqual(listErrors({ name: undefined }), []);
+  assert.deepEqual(listErrors({ name: undefined, command: "Required" }), [["command", "Required"]]);
 });

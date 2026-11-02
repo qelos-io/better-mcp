@@ -17,6 +17,10 @@ export interface ServerForm {
 
 export type FormErrors = Partial<Record<keyof ServerForm, string>>;
 
+export function listErrors(errors: FormErrors): [string, string][] {
+  return Object.entries(errors).filter((e): e is [string, string] => !!e[1]);
+}
+
 export const emptyForm = (kind: ServerKind = "local"): ServerForm => ({ kind, name: "", command: "", args: "", env: "", url: "", headers: "" });
 
 export function validateName(name: string, existing: string[]): string | null {

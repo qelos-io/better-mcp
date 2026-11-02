@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { McpServerConfig } from "../../../src/types/index";
 import { api } from "../api";
-import { buildConfig, emptyForm, formFromConfig, mergeConfig, validateName, type FormErrors, type ServerForm, type ServerKind } from "../lib/server-form";
+import { buildConfig, emptyForm, formFromConfig, listErrors, mergeConfig, validateName, type FormErrors, type ServerForm, type ServerKind } from "../lib/server-form";
 
 export interface InstallRequest {
   name: string;
@@ -91,7 +91,7 @@ export function AddServerDialog(props: { request: InstallRequest; existing: stri
   };
 
   const preview = mode === "json" ? null : buildConfig({ ...form, kind: mode }).config;
-  const errorList = Object.entries(errors);
+  const errorList = listErrors(errors);
   return (
     <dialog ref={ref} class="form-dialog" onClose={props.onClose} aria-labelledby="dtitle">
       <form onSubmit={submit} noValidate>
